@@ -18,23 +18,28 @@ if os.path.exists(logo_path):
 else:
     icon_image = "🇵🇾"
 
-# --- CONFIGURACIÓN DE PÁGINA E ICONO PWA PARA IPHONE ---
+# --- CONFIGURACIÓN DE PÁGINA NATIVA ---
 st.set_page_config(
     page_title="Lector Facturas PY",
     page_icon=icon_image,
     layout="wide"
 )
 
-# Inyección directa y local sin iframe en el cuerpo del documento principal
-st.html(
-    """
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-    <link rel="apple-touch-icon-precomposed" href="/static/apple-touch-icon.png">
-    """
+# --- INYECCIÓN DIRECTA PARA IPHONE (MÉTODO ALTERNATIVO) ---
+# Usamos una URL directa y compatible de tu repositorio para que el iPhone la absorba al vuelo
+raw_logo_url = "https://githubusercontent.com"
+
+st.markdown(
+    f"""
+    <link rel="icon" sizes="180x180" href="{raw_logo_url}">
+    <link rel="shortcut icon" sizes="180x180" href="{raw_logo_url}">
+    """,
+    unsafe_allow_html=True
 )
 
 if "lista_resultados" not in st.session_state:
     st.session_state.lista_resultados = []
+
 
 st.markdown("""
     <style>

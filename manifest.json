@@ -1,0 +1,22 @@
+{
+  "short_name": "Facturas PY",
+  "name": "Lector de Facturas PY",
+  "icons": [
+    {
+      "src": "https://githubusercontent.com",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://githubusercontent.com",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/?v=pwa",
+  "background_color": "#f4f7f6",
+  "theme_color": "#004a99",
+  "display": "standalone",
+  "orientation": "portrait"
+}

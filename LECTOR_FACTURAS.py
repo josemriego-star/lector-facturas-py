@@ -8,7 +8,7 @@ import time
 import pandas as pd
 from PIL import Image
 
-# --- 1. CONFIGURACIÓN DE SEGURIDAD Y PÁGINA ---
+# --- 1. CONFIGURACIÓN DE SEGURIDAD Y PÁGINA NATIVA ---
 api_key_servidor = os.getenv("GEMINI_API_KEY")
 
 # Carga segura de la imagen local para la pestaña
@@ -18,21 +18,65 @@ if os.path.exists(logo_path):
 else:
     icon_image = "🇵🇾"
 
-# --- CONFIGURACIÓN DE PÁGINA NATIVA ---
 st.set_page_config(
     page_title="Lector Facturas PY",
     page_icon=icon_image,
     layout="wide"
 )
 
-# --- INYECCIÓN DIRECTA PARA IPHONE (MÉTODO ALTERNATIVO) ---
-# Usamos una URL directa y compatible de tu repositorio para que el iPhone la absorba al vuelo
+# --- ENLACES DE RECURSOS (CORREGIDO) ---
 raw_logo_url = "https://githubusercontent.com"
 
+# --- INYECCIÓN DE MANIFEST Y ESTILOS AVANZADOS PARA EL IPHONE ---
 st.markdown(
     f"""
-    <link rel="icon" sizes="180x180" href="{raw_logo_url}">
-    <link rel="shortcut icon" sizes="180x180" href="{raw_logo_url}">
+    <link rel="manifest" href="https://githubusercontent.com">
+    <link rel="apple-touch-icon" sizes="180x180" href="{raw_logo_url}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#004a99">
+    <meta name="apple-mobile-web-app-title" content="Facturas PY">
+    <meta name="apple-mobile-web-app-image" content="{raw_logo_url}">
+    
+    <style>
+        /* Rediseño de fondo de la aplicación */
+        .stApp {{
+            background-color: #f8f9fa;
+        }}
+        /* Botones principales modernos */
+        .stButton>button {{
+            width: 100%;
+            border-radius: 8px;
+            height: 3.2em;
+            background-color: #004a99;
+            color: white;
+            font-weight: bold;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,74,153,0.15);
+            transition: all 0.3s ease;
+        }}
+        .stButton>button:hover {{
+            background-color: #003366;
+            transform: translateY(-1px);
+        }}
+        /* Tarjetas de facturas pulidas */
+        .invoice-card {{
+            background-color: white;
+            padding: 22px;
+            border-radius: 12px;
+            border-left: 6px solid #004a99;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            margin-bottom: 20px;
+        }}
+        /* Contenedores modernos del área principal */
+        .main-hero-box {{
+            background: linear-gradient(135deg, #004a99 0%, #002244 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }}
+    </style>
     """,
     unsafe_allow_html=True
 )
@@ -40,45 +84,36 @@ st.markdown(
 if "lista_resultados" not in st.session_state:
     st.session_state.lista_resultados = []
 
+# --- 2. ÁREA PRINCIPAL REDISEÑADA (ESTÉTICA) ---
+st.markdown(
+    """
+    <div class="main-hero-box">
+        <h1 style='margin:0; font-size: 2.2rem; color: white;'>Lector de Facturas e Ítems Detallados</h1>
+        <p style='margin:8px 0 0 0; opacity: 0.85; font-size: 1.05rem;'>Extracción automatizada de cabeceras y desglose de mercaderías para contabilidad paraguaya</p>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
 
-st.markdown("""
-    <style>
-    .stButton>button {
-        width: 100%;
-        border-radius: 5px;
-        height: 3em;
-        background-color: #004a99;
-        color: white;
-        font-weight: bold;
-    }
-    .invoice-card {
-        background-color: white;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 5px solid #004a99;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        margin-bottom: 15px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-st.title("Lector de Facturas e Ítems Detallados")
-st.caption("Extracción de cabecera y desglose de mercaderías/servicios para contabilidad")
-
-# --- 2. BARRA LATERAL ---
+# --- 3. BARRA LATERAL CON LOGOTIPO VISUAL ---
 with st.sidebar:
-    st.header("⚙️ Configuración")
+    # Agrega el logotipo arriba en el menú lateral para mejorar el aspecto visual
+    if os.path.exists(logo_path):
+        st.image(icon_image, width=120)
+        
+    st.markdown("<h2 style='margin-top:10px;'>⚙️ Configuración</h2>", unsafe_allow_html=True)
     if not api_key_servidor:
         api_key = st.text_input("Ingresar API Key manualmente", type="password")
     else:
         api_key = api_key_servidor
         st.success("✅ Servidor conectado de forma segura")
 
+    st.markdown("---")
     if st.button("🗑️ Limpiar Memoria"):
         st.session_state.lista_resultados = []
         st.rerun()
 
-# --- 3. PROCESAMIENTO CON DETALLE DE ÍTEMS ---
+# --- 4. PROCESAMIENTO CON DETALLE DE ÍTEMS ---
 if api_key:
     uploaded_files = st.file_uploader("Subir o capturar facturas", type=['jpg', 'jpeg', 'png'], accept_multiple_files=True)
 
@@ -91,7 +126,7 @@ if api_key:
             for idx, file in enumerate(uploaded_files):
                 try:
                     status_text.text(f"Analizando {file.name} ({idx+1}/{len(uploaded_files)})...")
-                    url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={api_key_servidor}"
+                    url_api = f"https://googleapis.com{api_key_servidor}"
                     img_b64 = base64.b64encode(file.getvalue()).decode('utf-8')
                     
                     prompt = """Extrae la información de esta factura física de Paraguay en formato JSON exacto:
@@ -145,7 +180,7 @@ if api_key:
             
             status_text.text("✅ Procesamiento finalizado.")
 
-    # --- 4. VISUALIZACIÓN Y EXPORTACIÓN ---
+    # --- 5. VISUALIZACIÓN Y EXPORTACIÓN ---
     if st.session_state.lista_resultados:
         res = st.session_state.lista_resultados
         

@@ -267,21 +267,25 @@
 
             if (!input.files || input.files.length === 0) return;
 
+            // Mostrar estados de carga INMEDIATAMENTE al seleccionar el archivo
             prompt.style.display = 'none';
             loader.style.display = 'block';
             loadingText.style.display = 'block';
 
             const formData = new FormData();
-            // CORRECCIÓN DEFINITIVA: Se extrae el archivo individual usando el índice [0]
             formData.append('file', input.files[0]); 
 
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
+                    mode: 'cors', // Forzar el paso seguro de datos rompiendo el bloqueo CORS
                     body: formData
                 });
 
-                if (!response.ok) throw new Error('Error en la respuesta del servidor');
+                if (!response.ok) {
+                    const errData = await response.text();
+                    throw new Error('Servidor error: ' + errData);
+                }
 
                 const data = await response.json();
                 todasLasFacturas.push(data);
@@ -296,11 +300,4 @@
                                     <p class="item-desc">${item.descripcion || 'Ítem'}</p>
                                     <p class="item-sub">Cant: ${item.cantidad || 1} • IVA: ${item.iva || '10%'}</p>
                                 </div>
-                                <p class="item-total">${Number(item.total_item).toLocaleString('es-PY')} ₲</p>
-                            </div>
-                        `;
-                    });
-                }
-
-                const card = `
-                ${data.condicion || 'CONTADO'}${data.emisor || 'Emisor'}RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}Fecha${data.fecha || '--/--/----'}${itemsHtml || 'No se desglosaron ítems.'}Total Liquidado${Number(data.total).toLocaleString('es-PY')} ₲`;container.insertAdjacentHTML('afterbegin', card);} catch (error) {alert('Error al procesar: ' + error.message);} finally {prompt.style.display = 'block';loader.style.display = 'none';loadingText.style.display = 'none';input.value = '';}}async function descargarExcelCompleto() {if (todasLasFacturas.length === 0) return;try {const response = await fetch("onrender.com", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify(todasLasFacturas)});if (!response.ok) throw new Error("Error al generar Excel");const blob = await response.blob();const url = window.URL.createObjectURL(blob);const a = document.createElement('a');a.href = url;a.download = "facturas_detalladas_py.xlsx";document.body.appendChild(a);a.click();a.remove();} catch (error) {alert("Error al descargar Excel: " + error.message);}}
+                                ${Number(item.total_item).toLocaleString('es-PY')} ₲`;});}const card = <div class="invoice-card"> <div class="invoice-header"> <div> <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span> <h3 class="invoice-emisor">${data.emisor || 'Emisor'}</h3> <p class="invoice-meta">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}</p> </div> <div style="text-align: right;"> <p class="invoice-meta" style="margin:0;">Fecha</p> <p class="invoice-emisor" style="font-size:13px;">${data.fecha || '--/--/----'}</p> </div> </div> <div>${itemsHtml || '<p class="upload-desc">No se desglosaron ítems.</p>'}</div> <div class="total-box"> <span class="total-label">Total Liquidado</span> <span class="total-amount">${Number(data.total).toLocaleString('es-PY')} ₲</span> </div> </div>;container.insertAdjacentHTML('afterbegin', card);} catch (error) {alert('Fallo en el procesamiento: ' + error.message);} finally {// Reestablecer estados al finalizar la respuestaprompt.style.display = 'block';loader.style.display = 'none';loadingText.style.display = 'none';input.value = '';}}async function descargarExcelCompleto() {if (todasLasFacturas.length === 0) return;try {const response = await fetch("onrender.com", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify(todasLasFacturas)});if (!response.ok) throw new Error("Error al generar Excel");const blob = await response.blob();const url = window.URL.createObjectURL(blob);const a = document.createElement('a');a.href = url;a.download = "facturas_detalladas_py.xlsx";document.body.appendChild(a);a.click();a.remove();} catch (error) {alert("Error al descargar Excel: " + error.message);}}

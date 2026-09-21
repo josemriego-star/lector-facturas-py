@@ -26,25 +26,12 @@ st.set_page_config(
 )
 
 # --- INYECCIÓN OCULTA DEL ICONO PARA IPHONE ---
-apple_icon_url = "https://raw.githubusercontent.com/josemriego-star/lector-facturas-py/main/apple-touch-icon.png?v=2"
+apple_icon_url = "https://raw.githubusercontent.com/josemriego-star/lector-facturas-py/main/apple-touch-icon.png?v=3"
 
-components.html(
-    f"""
-    <script>
-        const linkApple = document.createElement('link');
-        linkApple.rel = 'apple-touch-icon';
-        linkApple.href = '{apple_icon_url}';
-        document.head.appendChild(linkApple);
-
-        const linkIcon = document.createElement('link');
-        linkIcon.rel = 'icon';
-        linkIcon.type = 'image/png';
-        linkIcon.href = '{apple_icon_url}';
-        document.head.appendChild(linkIcon);
-    </script>
-    """,
-    height=0,
-    width=0
+st.markdown(
+    f'<link rel="apple-touch-icon" href="{raw_logo_url}">'
+    f'<link rel="apple-touch-icon-precomposed" href="{raw_logo_url}">',
+    unsafe_allow_html=True
 )
 
 if "lista_resultados" not in st.session_state:

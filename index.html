@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lector Facturas PY</title>
+    
+    <!-- CONTROL DE ICONOS NATIVOS DE APPLE -->
+    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+    <link rel="apple-touch-icon-precomposed" href="logo.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Facturas PY">
+
+    <!-- Tailwind CSS para diseño fluido y profesional -->
+    <script src="https://tailwindcss.com"></script>
+    <!-- Lucide Icons para iconos modernos -->
+    <script src="https://unpkg.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased font-sans pb-10">
+
+    <!-- Encabezado Estilo iOS -->
+    <header class="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <img src="logo.png" alt="Logo" class="w-9 h-9 rounded-xl shadow-sm">
+            <div>
+                <h1 class="text-lg font-bold text-slate-900 tracking-tight">Lector Facturas</h1>
+                <p class="text-xs text-gray-400">Contabilidad Automatizada PY</p>
+            </div>
+        </div>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+            <span class="w-1.5 h-1.5 mr-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Online
+        </span>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 mt-6 space-y-6">
+        
+        <!-- Zona Dropzone de Carga Premium -->
+        <div class="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center shadow-sm hover:border-blue-500 transition-all relative">
+            <input type="file" id="fileInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="procesarArchivo()">
+            <div id="uploadPrompt" class="space-y-3">
+                <div class="mx-auto w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
+                    <i data-lucide="cloud-lightning" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-700">Subir o Capturar Factura</p>
+                    <p class="text-xs text-gray-400 mt-1">Formatos JPG o PNG hasta 20MB</p>
+                </div>
+            </div>
+            
+            <!-- Animación de carga interna -->
+            <div id="loadingState" class="hidden space-y-3 py-4">
+                <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="text-sm font-medium text-slate-600 animate-pulse">Inteligencia Artificial analizando ítems...</p>
+            </div>
+        </div>
+
+        <!-- Botón para descargar el Excel Premium con el diseño de tu Mac -->
+        <div class="text-center mt-4">
+            <button id="btnExcel" onclick="descargarExcelCompleto()" class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2">
+                <i data-lucide="file-spreadsheet"></i>
+                <span>📥 Descargar Formato Excel Premium (.xlsx)</span>
+            </button>
+        </div>
+
+        <!-- Contenedor dinámico de resultados -->
+        <div id="resultadosContainer" class="space-y-4"></div>
+
+    </main>
+
+    <script>
+        // Inicializar iconos automáticamente
+        lucide.createIcons();
+
+        // Memoria global temporal para juntar todas las facturas procesadas en la sesión
+        let todasLasFacturas = [];
+
+        // URL real de tu backend en Render conectada correctamente
+        const API_URL = "https://onrender.com";
+
+        async function procesarArchivo() {
+            const input = document.getElementById('fileInput');
+            const prompt = document.getElementById('uploadPrompt');
+            const loading = document.getElementById('loadingState');
+            const container = document.getElementById('resultadosContainer');
+
+            if (!input.files || input.files.length === 0) return;
+
+            // Mostrar estado de carga e inhabilitar interfaz
+            prompt.classList.add('hidden');
+            loading.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Error al analizar el documento');
+
+                const data = await response.json();
+                
+                // Guardamos en la memoria para la descarga del Excel consolidado
+                todasLasFacturas.push(data);
+                document.getElementById('btnExcel').classList.remove('hidden');
+                
+                // Construcción de tarjetas con diseño móvil de alta fidelidad
+                let itemsHtml = '';
+                if(data.items && data.items.length > 0) {
+                    data.items.forEach(item => {
+                        itemsHtml += `
+                            <div class="flex justify-between items-start py-2 border-b border-gray-50 text-sm">
+                                <div class="max-w-[70%]">
+                                    <p class="font-medium text-slate-800">${item.descripcion || 'Sin descripción'}</p>
+                                    <p class="text-xs text-gray-400">Cant: ${item.cantidad || 1} • IVA: ${item.iva || '10%'}</p>
+                                </div>
+                                <p class="font-semibold text-slate-700">${Number(item.total_item).toLocaleString('es-PY')} ₲</p>
+                            </div>
+                        `;
+                    });
+                }
+
+                const card = `
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4 animate-fade-in">
+                        <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-blue-600">${data.condicion || 'CONTADO'}</span>
+                                <h3 class="text-base font-bold text-slate-900 mt-0.5">${data.emisor || 'Emisor Desconocido'}</h3>
+                                <p class="text-xs text-gray-400 mt-0.5">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-400">Fecha</p>
+                                <p class="text-sm font-semibold text-slate-800">${data.fecha || '--/--/----'}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="py-1">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Desglose de Mercaderías</p>
+                            ${itemsHtml || '<p class="text-xs text-gray-400">No se detectaron ítems específicos.</p>'}
+                        </div>
+
+                        <div class="bg-slate-50 rounded-xl p-3 flex justify-between items-center mt-2">
+                            <span class="text-sm font-bold text-slate-700">Total General</span>
+                            <span class="text-lg font-black text-blue-700">${Number(data.total).toLocaleString('es-PY')} ₲</span>
+                        </div>
+                    </div>
+                `;
+
+                container.insertAdjacentHTML('afterbegin', card);
+
+            } catch (error) {
+                alert('Fallo en el procesamiento: ' + error.message);
+            } finally {
+                // Reestablecer estados
+                prompt.classList.remove('hidden');
+                loading.classList.add('hidden');
+                input.value = '';
+            }
+        }
+
+        // Función conectada al endpoint de openpyxl
+        async function descargarExcelCompleto() {
+            if (todasLasFacturas.length === 0) return;
+            
+            try {
+                const response = await fetch("https://onrender.com", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(todasLasFacturas)
+                });
+                
+                if (!response.ok) throw new Error("Fallo al generar el archivo Excel");
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "facturas_detalladas_py.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } catch (error) {
+                alert("Error al descargar Excel: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -267,12 +267,14 @@
 
             if (!input.files || input.files.length === 0) return;
 
+            // Activamos la animación visual de carga
             prompt.style.display = 'none';
             loader.style.display = 'block';
             loadingText.style.display = 'block';
 
             const formData = new FormData();
-            formData.append('file', input.files[0]);
+            // CORRECCIÓN AQUÍ: Tomamos el archivo físico exacto del input [0]
+            formData.append('file', input.files[0]); 
 
             try {
                 const response = await fetch(API_URL, {
@@ -304,30 +306,37 @@
                 const card = `
                     <div class="invoice-card">
                         <div class="invoice-header">
-${data.condicion || 'CONTADO'}
-${data.emisor || 'Emisor'}
-RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}
+                            <div>
+                                <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span>
+                                <h3 class="invoice-emisor">${data.emisor || 'Emisor'}</h3>
+                                <p class="invoice-meta">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p class="invoice-meta" style="margin:0;">Fecha</p>
+                                <p class="invoice-emisor" style="font-size:13px;">${data.fecha || '--/--/----'}</p>
+                            </div>
+                        </div>
+                        <div>${itemsHtml || '<p class="upload-desc">No se desglosaron ítems.</p>'}</div>
+                        <div class="total-box">
+                            <span class="total-label">Total Liquidado</span>
+                            <span class="total-amount">${Number(data.total).toLocaleString('es-PY')} ₲</span>
+                        </div>
+                    </div>
+                `;
 
-Fecha${data.fecha || '--/--/----'}
+                container.insertAdjacentHTML('afterbegin', card);
 
-${itemsHtml || 'No se desglosaron ítems.'}
+            } catch (error) {
+                alert('Error al procesar: ' + error.message);
+            } finally {
+                // Reestablecemos el dropzone para poder subir otra factura
+                prompt.style.display = 'block';
+                loader.style.display = 'none';
+                loadingText.style.display = 'none';
+                input.value = '';
+            }
+        }
 
-Total Liquidado
-${Number(data.total).toLocaleString('es-PY')}₲
-`;
-
-
-container.insertAdjacentHTML('afterbegin', card)
-
-;} catch (error) {
-alert('Error al procesar: ' + error.message);
-} finally {
-prompt.style.display = 'block';
-loader.style.display = 'none';
-loadingText.style.display = 'none';
-input.value = '';
-}
-}
 
 async function descargarExcelCompleto() {
 if (todasLasFacturas.length === 0) return;

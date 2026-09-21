@@ -20,26 +20,30 @@ else:
 # --- CONFIGURACIÓN DE PÁGINA E ICONO PWA PARA IPHONE ---
 st.set_page_config(
     page_title="Lector Facturas PY",
-    page_icon="logo.png",
+    page_icon=icon_image,
     layout="wide"
 )
 
-# URL del icono en GitHub con parametro para romper la caché de Safari
+# --- INYECCIÓN OCULTA DEL ICONO PARA IPHONE ---
 apple_icon_url = "https://raw.githubusercontent.com/josemriego-star/lector-facturas-py/main/apple-touch-icon.png?v=2"
 
-st.markdown(
+components.html(
     f"""
-    <head>
-        <!-- Icono para iPhone y iPad -->
-        <link rel="apple-touch-icon" href="{apple_icon_url}">
-        <link rel="apple-touch-icon-precomposed" href="{apple_icon_url}">
-        
-        <!-- Icono para navegador y Android -->
-        <link rel="shortcut icon" href="{apple_icon_url}">
-        <link rel="icon" type="image/png" href="{apple_icon_url}">
-    </head>
+    <script>
+        const linkApple = document.createElement('link');
+        linkApple.rel = 'apple-touch-icon';
+        linkApple.href = '{apple_icon_url}';
+        document.head.appendChild(linkApple);
+
+        const linkIcon = document.createElement('link');
+        linkIcon.rel = 'icon';
+        linkIcon.type = 'image/png';
+        linkIcon.href = '{apple_icon_url}';
+        document.head.appendChild(linkIcon);
+    </script>
     """,
-    unsafe_allow_html=True
+    height=0,
+    width=0
 )
 
 if "lista_resultados" not in st.session_state:

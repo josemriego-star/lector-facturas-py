@@ -9,86 +9,267 @@
     <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
     <link rel="apple-touch-icon-precomposed" href="logo.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Facturas PY">
 
-    <!-- Tailwind CSS para diseño fluido y profesional -->
-    <script src="https://tailwindcss.com"></script>
-    <!-- Lucide Icons para iconos modernos -->
-    <script src="https://unpkg.com"></script>
+    <!-- CSS Corporativo Blindado (Sin librerías externas que se bloqueen) -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+            color: #333333;
+        }
+        header {
+            background-color: #004a99;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header-title-box {
+            display: flex;
+            align-items: center;
+        }
+        .header-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            margin-right: 12px;
+            background-color: white;
+        }
+        .header-text h1 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .header-text p {
+            margin: 2px 0 0 0;
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        .badge-online {
+            background-color: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        main {
+            max-width: 480px;
+            margin: 20px auto;
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+        /* Zona de Carga Estilo PWA Premium */
+        .upload-card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e1e6eb;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .upload-card input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #004a99;
+        }
+        .upload-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #222222;
+            margin: 0 0 4px 0;
+        }
+        .upload-desc {
+            font-size: 12px;
+            color: #888888;
+            margin: 0;
+        }
+        /* Botón de Excel Impecable */
+        .btn-excel {
+            display: none; /* Se activa dinámicamente */
+            width: 100%;
+            background-color: #107c41;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(16,124,65,0.2);
+            transition: background-color 0.2s;
+            margin-bottom: 20px;
+        }
+        .btn-excel:hover {
+            background-color: #0b5931;
+        }
+        /* Spinner de carga */
+        .loader {
+            display: none;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #004a99;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Tarjetas de Facturas Profesionales */
+        .invoice-card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            border-left: 5px solid #004a99;
+            border-top: 1px solid #e1e6eb;
+            border-right: 1px solid #e1e6eb;
+            border-bottom: 1px solid #e1e6eb;
+            margin-bottom: 15px;
+        }
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #f0f3f6;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+        .invoice-emisor {
+            font-size: 15px;
+            font-weight: 700;
+            color: #111111;
+            margin: 0;
+        }
+        .invoice-meta {
+            font-size: 12px;
+            color: #666666;
+            margin: 4px 0 0 0;
+        }
+        .invoice-condicion {
+            font-size: 10px;
+            font-weight: 700;
+            background-color: #e6f0ff;
+            color: #004a99;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 6px 0;
+            border-bottom: 1px dashed #f0f3f6;
+        }
+        .item-desc {
+            color: #333333;
+            margin: 0;
+            max-width: 70%;
+        }
+        .item-sub {
+            font-size: 11px;
+            color: #888888;
+            margin: 2px 0 0 0;
+        }
+        .item-total {
+            font-weight: 600;
+            color: #222222;
+            margin: 0;
+        }
+        .total-box {
+            background-color: #f8fafc;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+        .total-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #444444;
+        }
+        .total-amount {
+            font-size: 17px;
+            font-weight: 800;
+            color: #004a99;
+        }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-800 antialiased font-sans pb-10">
+<body>
 
-    <!-- Encabezado Estilo iOS -->
-    <header class="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 px-4 py-4 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-            <img src="logo.png" alt="Logo" class="w-9 h-9 rounded-xl shadow-sm">
-            <div>
-                <h1 class="text-lg font-bold text-slate-900 tracking-tight">Lector Facturas</h1>
-                <p class="text-xs text-gray-400">Contabilidad Automatizada PY</p>
+    <!-- Menú Superior Corporativo -->
+    <header>
+        <div class="header-title-box">
+            <img src="logo.png" alt="Logo" class="header-logo">
+            <div class="header-text">
+                <h1>Lector Facturas PY</h1>
+                <p>Gestión Contable Automatizada</p>
             </div>
         </div>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
-            <span class="w-1.5 h-1.5 mr-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Online
-        </span>
+        <div class="badge-online">Sistema Activo</div>
     </header>
 
-    <main class="max-w-md mx-auto px-4 mt-6 space-y-6">
-        
-        <!-- Zona Dropzone de Carga Premium -->
-        <div class="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center shadow-sm hover:border-blue-500 transition-all relative">
-            <input type="file" id="fileInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="procesarArchivo()">
-            <div id="uploadPrompt" class="space-y-3">
-                <div class="mx-auto w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
-                    <i data-lucide="cloud-lightning" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <p class="text-sm font-semibold text-gray-700">Subir o Capturar Factura</p>
-                    <p class="text-xs text-gray-400 mt-1">Formatos JPG o PNG hasta 20MB</p>
-                </div>
+    <main>
+        <!-- Zona Dropzone de Carga -->
+        <div class="upload-card">
+            <input type="file" id="fileInput" accept="image/*" onchange="procesarArchivo()">
+            <div id="uploadPrompt">
+                <div class="upload-icon">📸</div>
+                <p class="upload-title">Subir o Capturar Factura</p>
+                <p class="upload-desc">Formatos JPG o PNG automáticos</p>
             </div>
-            
-            <!-- Animación de carga interna -->
-            <div id="loadingState" class="hidden space-y-3 py-4">
-                <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p class="text-sm font-medium text-slate-600 animate-pulse">Inteligencia Artificial analizando ítems...</p>
-            </div>
+            <div id="loader" class="loader"></div>
+            <p id="loadingText" class="upload-desc" style="display:none; color:#004a99; font-weight:600; margin-top:10px;">Analizando mercaderías con Gemini...</p>
         </div>
 
-        <!-- Botón para descargar el Excel Premium con el diseño de tu Mac -->
-        <div class="text-center mt-4">
-            <button id="btnExcel" onclick="descargarExcelCompleto()" class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2">
-                <i data-lucide="file-spreadsheet"></i>
-                <span>📥 Descargar Formato Excel Premium (.xlsx)</span>
-            </button>
-        </div>
+        <!-- Botón Corporativo de Excel -->
+        <button id="btnExcel" class="btn-excel" onclick="descargarExcelCompleto()">
+            📥 Descargar Reporte Excel (.xlsx)
+        </button>
 
-        <!-- Contenedor dinámico de resultados -->
-        <div id="resultadosContainer" class="space-y-4"></div>
-
+        <!-- Contenedor de Resultados -->
+        <div id="resultadosContainer"></div>
     </main>
 
     <script>
-        // Inicializar iconos automáticamente
-        lucide.createIcons();
-
-        // Memoria global temporal para juntar todas las facturas procesadas en la sesión
         let todasLasFacturas = [];
-
-        // URL real de tu backend en Render conectada correctamente
         const API_URL = "https://onrender.com";
 
         async function procesarArchivo() {
             const input = document.getElementById('fileInput');
             const prompt = document.getElementById('uploadPrompt');
-            const loading = document.getElementById('loadingState');
+            const loader = document.getElementById('loader');
+            const loadingText = document.getElementById('loadingText');
             const container = document.getElementById('resultadosContainer');
 
             if (!input.files || input.files.length === 0) return;
 
-            // Mostrar estado de carga e inhabilitar interfaz
-            prompt.classList.add('hidden');
-            loading.classList.remove('hidden');
+            prompt.style.display = 'none';
+            loader.style.display = 'block';
+            loadingText.style.display = 'block';
 
             const formData = new FormData();
             formData.append('file', input.files[0]);
@@ -99,93 +280,73 @@
                     body: formData
                 });
 
-                if (!response.ok) throw new Error('Error al analizar el documento');
+                if (!response.ok) throw new Error('Error en la respuesta del servidor');
 
                 const data = await response.json();
-                
-                // Guardamos en la memoria para la descarga del Excel consolidado
                 todasLasFacturas.push(data);
-                document.getElementById('btnExcel').classList.remove('hidden');
+                document.getElementById('btnExcel').style.display = 'block';
                 
-                // Construcción de tarjetas con diseño móvil de alta fidelidad
                 let itemsHtml = '';
                 if(data.items && data.items.length > 0) {
                     data.items.forEach(item => {
                         itemsHtml += `
-                            <div class="flex justify-between items-start py-2 border-b border-gray-50 text-sm">
-                                <div class="max-w-[70%]">
-                                    <p class="font-medium text-slate-800">${item.descripcion || 'Sin descripción'}</p>
-                                    <p class="text-xs text-gray-400">Cant: ${item.cantidad || 1} • IVA: ${item.iva || '10%'}</p>
+                            <div class="item-row">
+                                <div>
+                                    <p class="item-desc">${item.descripcion || 'Ítem'}</p>
+                                    <p class="item-sub">Cant: ${item.cantidad || 1} • IVA: ${item.iva || '10%'}</p>
                                 </div>
-                                <p class="font-semibold text-slate-700">${Number(item.total_item).toLocaleString('es-PY')} ₲</p>
+                                <p class="item-total">${Number(item.total_item).toLocaleString('es-PY')} ₲</p>
                             </div>
                         `;
                     });
                 }
 
                 const card = `
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4 animate-fade-in">
-                        <div class="flex justify-between items-start border-b border-slate-100 pb-3">
-                            <div>
-                                <span class="text-xs font-bold uppercase tracking-wider text-blue-600">${data.condicion || 'CONTADO'}</span>
-                                <h3 class="text-base font-bold text-slate-900 mt-0.5">${data.emisor || 'Emisor Desconocido'}</h3>
-                                <p class="text-xs text-gray-400 mt-0.5">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-400">Fecha</p>
-                                <p class="text-sm font-semibold text-slate-800">${data.fecha || '--/--/----'}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="py-1">
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Desglose de Mercaderías</p>
-                            ${itemsHtml || '<p class="text-xs text-gray-400">No se detectaron ítems específicos.</p>'}
-                        </div>
+                    <div class="invoice-card">
+                        <div class="invoice-header">
+${data.condicion || 'CONTADO'}
+${data.emisor || 'Emisor'}
+RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}
 
-                        <div class="bg-slate-50 rounded-xl p-3 flex justify-between items-center mt-2">
-                            <span class="text-sm font-bold text-slate-700">Total General</span>
-                            <span class="text-lg font-black text-blue-700">${Number(data.total).toLocaleString('es-PY')} ₲</span>
-                        </div>
-                    </div>
-                `;
+Fecha${data.fecha || '--/--/----'}
 
-                container.insertAdjacentHTML('afterbegin', card);
+${itemsHtml || 'No se desglosaron ítems.'}
 
-            } catch (error) {
-                alert('Fallo en el procesamiento: ' + error.message);
-            } finally {
-                // Reestablecer estados
-                prompt.classList.remove('hidden');
-                loading.classList.add('hidden');
-                input.value = '';
-            }
-        }
+Total Liquidado
+${Number(data.total).toLocaleString('es-PY')}₲
+`;
 
-        // Función conectada al endpoint de openpyxl
-        async function descargarExcelCompleto() {
-            if (todasLasFacturas.length === 0) return;
-            
-            try {
-                const response = await fetch("https://onrender.com", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(todasLasFacturas)
-                });
-                
-                if (!response.ok) throw new Error("Fallo al generar el archivo Excel");
-                
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = "facturas_detalladas_py.xlsx";
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            } catch (error) {
-                alert("Error al descargar Excel: " + error.message);
-            }
-        }
-    </script>
-</body>
-</html>
+
+container.insertAdjacentHTML('afterbegin', card)
+
+;} catch (error) {
+alert('Error al procesar: ' + error.message);
+} finally {
+prompt.style.display = 'block';
+loader.style.display = 'none';
+loadingText.style.display = 'none';
+input.value = '';
+}
+}
+
+async function descargarExcelCompleto() {
+if (todasLasFacturas.length === 0) return;
+try {
+const response = await fetch("onrender.com", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify(todasLasFacturas)
+});
+if (!response.ok) throw new Error("Error al generar Excel");
+const blob = await response.blob();
+const url = window.URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download ="facturas_detalladas_py.xlsx";
+document.body.appendChild(a);
+a.click();
+a.remove();
+} catch (error) {
+alert("Error al descargar Excel: " + error.message);
+}
+}

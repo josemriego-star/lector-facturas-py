@@ -11,10 +11,10 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 app = FastAPI(title="API Lector Facturas PY")
 
-# Permitir conexión segura desde la interfaz HTML
+# 🔒 CONFIGURACIÓN DE SEGURIDAD EXPLICITA PARA EVITAR BLOQUEOS EN EL NAVEGADOR
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Permite que tu GitHub Pages se conecte sin restricciones
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,7 +31,6 @@ async def procesar_factura(file: UploadFile = File(...)):
         contents = await file.read()
         img_b64 = base64.b64encode(contents).decode('utf-8')
         
-        # Enlace oficial y correcto a la API de Google Gemini
         url_api = f"https://googleapis.com{api_key_servidor}"
         
         prompt = """Extrae la información de esta factura física de Paraguay en formato JSON exacto:
@@ -69,7 +68,6 @@ async def procesar_factura(file: UploadFile = File(...)):
         res_json = response.json()
         
         if 'candidates' in res_json:
-            # Extracción limpia y segura de la respuesta de Gemini
             texto = res_json['candidates'][0]['content']['parts'][0]['text']
             texto_limpio = texto.replace('```json', '').replace('```', '').strip()
             return json.loads(texto_limpio)
@@ -87,7 +85,6 @@ async def exportar_excel(datos_facturas: list):
         ws = wb.active
         ws.title = "Facturas Detalladas"
         
-        # Columnas exactas solicitadas
         columnas = [
             "Fecha", "Factura", "Proveedor", "Descripción Original (Factura)", 
             "Cantidad", "Unidad de Medida", "Subtotal (Gs.) c/IVA", 
@@ -95,7 +92,6 @@ async def exportar_excel(datos_facturas: list):
         ]
         ws.append(columnas)
         
-        # Estilos corporativos profesionales
         font_header = Font(name="Arial", size=10, bold=True, color="FFFFFF")
         fill_header = PatternFill(start_color="004a99", end_color="004a99", fill_type="solid")
         alignment_center = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -108,7 +104,6 @@ async def exportar_excel(datos_facturas: list):
             cell.fill = fill_header
             cell.alignment = alignment_center
         
-        # Procesamiento y cálculo matemático automatizado de IVA paraguayo
         for factura in datos_facturas:
             fecha = factura.get("fecha", "")
             nro_factura = factura.get("nro_factura", "")
@@ -139,26 +134,19 @@ async def exportar_excel(datos_facturas: list):
                     cantidad, unidad, subtotal_c_iva, tasa, round(iva, 2), round(subtotal_s_iva, 2)
                 ])
         
-        # Corrección de bucles de alineación y formatos numéricos para los guaraníes
-        # --- FORMATEO VISUAL DE CELDAS DE DATOS ---
         for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=10):
             for cell in row:
                 cell.font = Font(name="Arial", size=10)
                 cell.border = border_cell
-                
-                # Alinear al centro columnas de Fechas, Facturas, Tasa e IVA (Columnas 1, 2, 5, 6 y 8)
                 if cell.column in (1, 2, 5, 6, 8):
                     cell.alignment = Alignment(horizontal="center")
-                
-                # Formato contable para columnas de dinero en Guaraníes (Columnas 7, 9 y 10)
                 if cell.column in (7, 9, 10):
                     cell.number_format = '#,##0'
                     cell.alignment = Alignment(horizontal="right")
         
-        # Ajuste de tamaño automático de columnas seguro
         for col in ws.columns:
             max_len = max(len(str(cell.value or '')) for cell in col)
-            col_letter = col.column_letter # Acceso seguro al identificador en openpyxl
+            col_letter = col.column_letter
             ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
             
         stream = BytesIO()

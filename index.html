@@ -267,13 +267,12 @@
 
             if (!input.files || input.files.length === 0) return;
 
-            // Activamos la animación visual de carga
             prompt.style.display = 'none';
             loader.style.display = 'block';
             loadingText.style.display = 'block';
 
             const formData = new FormData();
-            // CORRECCIÓN AQUÍ: Tomamos el archivo físico exacto del input [0]
+            // CORRECCIÓN DEFINITIVA: Se extrae el archivo individual usando el índice [0]
             formData.append('file', input.files[0]); 
 
             try {
@@ -304,58 +303,4 @@
                 }
 
                 const card = `
-                    <div class="invoice-card">
-                        <div class="invoice-header">
-                            <div>
-                                <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span>
-                                <h3 class="invoice-emisor">${data.emisor || 'Emisor'}</h3>
-                                <p class="invoice-meta">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <p class="invoice-meta" style="margin:0;">Fecha</p>
-                                <p class="invoice-emisor" style="font-size:13px;">${data.fecha || '--/--/----'}</p>
-                            </div>
-                        </div>
-                        <div>${itemsHtml || '<p class="upload-desc">No se desglosaron ítems.</p>'}</div>
-                        <div class="total-box">
-                            <span class="total-label">Total Liquidado</span>
-                            <span class="total-amount">${Number(data.total).toLocaleString('es-PY')} ₲</span>
-                        </div>
-                    </div>
-                `;
-
-                container.insertAdjacentHTML('afterbegin', card);
-
-            } catch (error) {
-                alert('Error al procesar: ' + error.message);
-            } finally {
-                // Reestablecemos el dropzone para poder subir otra factura
-                prompt.style.display = 'block';
-                loader.style.display = 'none';
-                loadingText.style.display = 'none';
-                input.value = '';
-            }
-        }
-
-
-async function descargarExcelCompleto() {
-if (todasLasFacturas.length === 0) return;
-try {
-const response = await fetch("onrender.com", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify(todasLasFacturas)
-});
-if (!response.ok) throw new Error("Error al generar Excel");
-const blob = await response.blob();
-const url = window.URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
-a.download ="facturas_detalladas_py.xlsx";
-document.body.appendChild(a);
-a.click();
-a.remove();
-} catch (error) {
-alert("Error al descargar Excel: " + error.message);
-}
-}
+                ${data.condicion || 'CONTADO'}${data.emisor || 'Emisor'}RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}Fecha${data.fecha || '--/--/----'}${itemsHtml || 'No se desglosaron ítems.'}Total Liquidado${Number(data.total).toLocaleString('es-PY')} ₲`;container.insertAdjacentHTML('afterbegin', card);} catch (error) {alert('Error al procesar: ' + error.message);} finally {prompt.style.display = 'block';loader.style.display = 'none';loadingText.style.display = 'none';input.value = '';}}async function descargarExcelCompleto() {if (todasLasFacturas.length === 0) return;try {const response = await fetch("onrender.com", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify(todasLasFacturas)});if (!response.ok) throw new Error("Error al generar Excel");const blob = await response.blob();const url = window.URL.createObjectURL(blob);const a = document.createElement('a');a.href = url;a.download = "facturas_detalladas_py.xlsx";document.body.appendChild(a);a.click();a.remove();} catch (error) {alert("Error al descargar Excel: " + error.message);}}

@@ -17,19 +17,27 @@ if os.path.exists(logo_path):
 else:
     icon_image = "🇵🇾"
 
+# --- CONFIGURACIÓN DE PÁGINA E ICONO PWA PARA IPHONE ---
 st.set_page_config(
-    page_title="Lector Facturas PY", 
-    page_icon=icon_image, 
+    page_title="Lector Facturas PY",
+    page_icon="logo.png",
     layout="wide"
 )
 
-# URL directa del logo en GitHub para los accesos directos (Mac / Celular)
-raw_logo_url = "https://raw.githubusercontent.com/josemriego-star/lector-facturas-py/main/logo.png"
+# URL del icono en GitHub con parametro para romper la caché de Safari
+apple_icon_url = "https://raw.githubusercontent.com/josemriego-star/lector-facturas-py/main/apple-touch-icon.png?v=2"
 
 st.markdown(
     f"""
-    <link rel="apple-touch-icon" href="{raw_logo_url}">
-    <link rel="icon" type="image/png" href="{raw_logo_url}">
+    <head>
+        <!-- Icono para iPhone y iPad -->
+        <link rel="apple-touch-icon" href="{apple_icon_url}">
+        <link rel="apple-touch-icon-precomposed" href="{apple_icon_url}">
+        
+        <!-- Icono para navegador y Android -->
+        <link rel="shortcut icon" href="{apple_icon_url}">
+        <link rel="icon" type="image/png" href="{apple_icon_url}">
+    </head>
     """,
     unsafe_allow_html=True
 )

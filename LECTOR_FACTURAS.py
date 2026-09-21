@@ -18,7 +18,7 @@ else:
     icon_image = "🇵🇾"
 
 st.set_page_config(
-    page_title="Lector Facturas PY - Suite Contable", 
+    page_title="Lector Facturas PY", 
     page_icon=icon_image, 
     layout="wide"
 )
@@ -58,7 +58,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🇵🇾 Lector de Facturas e Ítems Detallados")
+st.title("Lector de Facturas e Ítems Detallados")
 st.caption("Extracción de cabecera y desglose de mercaderías/servicios para contabilidad")
 
 # --- 2. BARRA LATERAL ---
@@ -87,7 +87,7 @@ if api_key:
             for idx, file in enumerate(uploaded_files):
                 try:
                     status_text.text(f"Analizando {file.name} ({idx+1}/{len(uploaded_files)})...")
-                    url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+                    url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={api_key_servidor}"
                     img_b64 = base64.b64encode(file.getvalue()).decode('utf-8')
                     
                     prompt = """Extrae la información de esta factura física de Paraguay en formato JSON exacto:

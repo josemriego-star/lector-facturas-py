@@ -4,15 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lector Facturas PY</title>
-    
-    <!-- CONTROL DE ICONOS NATIVOS DE APPLE -->
+
     <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
     <link rel="apple-touch-icon-precomposed" href="logo.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Facturas PY">
 
-    <!-- CSS Corporativo Blindado (Sin librerías externas que se bloqueen) -->
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -30,10 +28,7 @@
             justify-content: space-between;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .header-title-box {
-            display: flex;
-            align-items: center;
-        }
+        .header-title-box { display: flex; align-items: center; }
         .header-logo {
             width: 36px;
             height: 36px;
@@ -41,17 +36,8 @@
             margin-right: 12px;
             background-color: white;
         }
-        .header-text h1 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-        .header-text p {
-            margin: 2px 0 0 0;
-            font-size: 11px;
-            opacity: 0.8;
-        }
+        .header-text h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
+        .header-text p { margin: 2px 0 0 0; font-size: 11px; opacity: 0.8; }
         .badge-online {
             background-color: rgba(255,255,255,0.2);
             padding: 4px 10px;
@@ -65,7 +51,6 @@
             padding: 0 15px;
             box-sizing: border-box;
         }
-        /* Zona de Carga Estilo PWA Premium */
         .upload-card {
             background-color: white;
             border-radius: 16px;
@@ -85,25 +70,11 @@
             opacity: 0;
             cursor: pointer;
         }
-        .upload-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-            color: #004a99;
-        }
-        .upload-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #222222;
-            margin: 0 0 4px 0;
-        }
-        .upload-desc {
-            font-size: 12px;
-            color: #888888;
-            margin: 0;
-        }
-        /* Botón de Excel Impecable */
+        .upload-icon { font-size: 32px; margin-bottom: 10px; color: #004a99; }
+        .upload-title { font-size: 15px; font-weight: 600; color: #222222; margin: 0 0 4px 0; }
+        .upload-desc { font-size: 12px; color: #888888; margin: 0; }
         .btn-excel {
-            display: none; /* Se activa dinámicamente */
+            display: none;
             width: 100%;
             background-color: #107c41;
             color: white;
@@ -117,10 +88,7 @@
             transition: background-color 0.2s;
             margin-bottom: 20px;
         }
-        .btn-excel:hover {
-            background-color: #0b5931;
-        }
-        /* Spinner de carga */
+        .btn-excel:hover { background-color: #0b5931; }
         .loader {
             display: none;
             border: 3px solid #f3f3f3;
@@ -135,7 +103,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* Tarjetas de Facturas Profesionales */
         .invoice-card {
             background-color: white;
             border-radius: 16px;
@@ -154,17 +121,8 @@
             padding-bottom: 10px;
             margin-bottom: 12px;
         }
-        .invoice-emisor {
-            font-size: 15px;
-            font-weight: 700;
-            color: #111111;
-            margin: 0;
-        }
-        .invoice-meta {
-            font-size: 12px;
-            color: #666666;
-            margin: 4px 0 0 0;
-        }
+        .invoice-emisor { font-size: 15px; font-weight: 700; color: #111111; margin: 0; }
+        .invoice-meta { font-size: 12px; color: #666666; margin: 4px 0 0 0; }
         .invoice-condicion {
             font-size: 10px;
             font-weight: 700;
@@ -182,21 +140,9 @@
             padding: 6px 0;
             border-bottom: 1px dashed #f0f3f6;
         }
-        .item-desc {
-            color: #333333;
-            margin: 0;
-            max-width: 70%;
-        }
-        .item-sub {
-            font-size: 11px;
-            color: #888888;
-            margin: 2px 0 0 0;
-        }
-        .item-total {
-            font-weight: 600;
-            color: #222222;
-            margin: 0;
-        }
+        .item-desc { color: #333333; margin: 0; max-width: 70%; }
+        .item-sub { font-size: 11px; color: #888888; margin: 2px 0 0 0; }
+        .item-total { font-weight: 600; color: #222222; margin: 0; }
         .total-box {
             background-color: #f8fafc;
             border-radius: 10px;
@@ -206,21 +152,12 @@
             align-items: center;
             margin-top: 12px;
         }
-        .total-label {
-            font-size: 13px;
-            font-weight: 700;
-            color: #444444;
-        }
-        .total-amount {
-            font-size: 17px;
-            font-weight: 800;
-            color: #004a99;
-        }
+        .total-label { font-size: 13px; font-weight: 700; color: #444444; }
+        .total-amount { font-size: 17px; font-weight: 800; color: #004a99; }
     </style>
 </head>
 <body>
 
-    <!-- Menú Superior Corporativo -->
     <header>
         <div class="header-title-box">
             <img src="logo.png" alt="Logo" class="header-logo">
@@ -233,7 +170,6 @@
     </header>
 
     <main>
-        <!-- Zona Dropzone de Carga -->
         <div class="upload-card">
             <input type="file" id="fileInput" accept="image/*" onchange="procesarArchivo()">
             <div id="uploadPrompt">
@@ -245,18 +181,18 @@
             <p id="loadingText" class="upload-desc" style="display:none; color:#004a99; font-weight:600; margin-top:10px;">Analizando mercaderías con Gemini...</p>
         </div>
 
-        <!-- Botón Corporativo de Excel -->
         <button id="btnExcel" class="btn-excel" onclick="descargarExcelCompleto()">
             📥 Descargar Reporte Excel (.xlsx)
         </button>
 
-        <!-- Contenedor de Resultados -->
         <div id="resultadosContainer"></div>
     </main>
 
     <script>
         let todasLasFacturas = [];
-        const API_URL = "https://onrender.com";
+
+        // >>> CAMBIÁ ESTO por la dirección real de tu servicio en Render (sin barra al final)
+        const API_URL = "https://TU-SERVICIO.onrender.com";
 
         async function procesarArchivo() {
             const input = document.getElementById('fileInput');
@@ -267,17 +203,15 @@
 
             if (!input.files || input.files.length === 0) return;
 
-            // Disparador visual inmediato
             prompt.style.display = 'none';
             loader.style.display = 'block';
             loadingText.style.display = 'block';
 
             const formData = new FormData();
-            // ¡FIJADO AQUÍ!: Extraemos la imagen de forma indexada nativa de JavaScript
-            formData.append('file', input.files[0]); 
+            formData.append('file', input.files[0]);
 
             try {
-                const response = await fetch(API_URL, {
+                const response = await fetch(API_URL + "/procesar", {
                     method: 'POST',
                     mode: 'cors',
                     body: formData
@@ -291,9 +225,9 @@
                 const data = await response.json();
                 todasLasFacturas.push(data);
                 document.getElementById('btnExcel').style.display = 'block';
-                
+
                 let itemsHtml = '';
-                if(data.items && data.items.length > 0) {
+                if (data.items && data.items.length > 0) {
                     data.items.forEach(item => {
                         itemsHtml += `
                             <div class="item-row">
@@ -301,4 +235,63 @@
                                     <p class="item-desc">${item.descripcion || 'Ítem'}</p>
                                     <p class="item-sub">Cant: ${item.cantidad || 1} • IVA: ${item.iva || '10%'}</p>
                                 </div>
-                                ${Number(item.total_item).toLocaleString('es-PY')} ₲`;});}const card = <div class="invoice-card"> <div class="invoice-header"> <div> <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span> <h3 class="invoice-emisor">${data.emisor || 'Emisor'}</h3> <p class="invoice-meta">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}</p> </div> <div style="text-align: right;"> <p class="invoice-meta" style="margin:0;">Fecha</p> <p class="invoice-emisor" style="font-size:13px;">${data.fecha || '--/--/----'}</p> </div> </div> <div>${itemsHtml || '<p class="upload-desc">No se desglosaron ítems.</p>'}</div> <div class="total-box"> <span class="total-label">Total Liquidado</span> <span class="total-amount">${Number(data.total).toLocaleString('es-PY')} ₲</span> </div> </div>;container.insertAdjacentHTML('afterbegin', card);} catch (error) {alert('Fallo en el procesamiento: ' + error.message);} finally {prompt.style.display = 'block';loader.style.display = 'none';loadingText.style.display = 'none';input.value = '';}}async function descargarExcelCompleto() {if (todasLasFacturas.length === 0) return;try {const response = await fetch("onrender.com", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify(todasLasFacturas)});if (!response.ok) throw new Error("Error al generar Excel");const blob = await response.blob();const url = window.URL.createObjectURL(blob);const a = document.createElement('a');a.href = url;a.download = "facturas_detalladas_py.xlsx";document.body.appendChild(a);a.click();a.remove();} catch (error) {alert("Error al descargar Excel: " + error.message);}}
+                                <p class="item-total">${Number(item.total_item).toLocaleString('es-PY')} ₲</p>
+                            </div>`;
+                    });
+                }
+
+                const card = `
+                    <div class="invoice-card">
+                        <div class="invoice-header">
+                            <div>
+                                <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span>
+                                <h3 class="invoice-emisor">${data.emisor || 'Emisor'}</h3>
+                                <p class="invoice-meta">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p class="invoice-meta" style="margin:0;">Fecha</p>
+                                <p class="invoice-emisor" style="font-size:13px;">${data.fecha || '--/--/----'}</p>
+                            </div>
+                        </div>
+                        <div>${itemsHtml || '<p class="upload-desc">No se desglosaron ítems.</p>'}</div>
+                        <div class="total-box">
+                            <span class="total-label">Total Liquidado</span>
+                            <span class="total-amount">${Number(data.total).toLocaleString('es-PY')} ₲</span>
+                        </div>
+                    </div>`;
+                container.insertAdjacentHTML('afterbegin', card);
+
+            } catch (error) {
+                alert('Fallo en el procesamiento: ' + error.message);
+            } finally {
+                prompt.style.display = 'block';
+                loader.style.display = 'none';
+                loadingText.style.display = 'none';
+                input.value = '';
+            }
+        }
+
+        async function descargarExcelCompleto() {
+            if (todasLasFacturas.length === 0) return;
+            try {
+                const response = await fetch(API_URL + "/exportar-excel", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(todasLasFacturas)
+                });
+                if (!response.ok) throw new Error("Error al generar Excel");
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "facturas_detalladas_py.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } catch (error) {
+                alert("Error al descargar Excel: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

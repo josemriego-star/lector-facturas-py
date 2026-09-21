@@ -5,21 +5,31 @@ import base64
 import os
 import time
 import pandas as pd
+from PIL import Image
 
 # --- 1. CONFIGURACIÓN DE SEGURIDAD Y PÁGINA ---
 api_key_servidor = os.getenv("GEMINI_API_KEY")
 
+# Carga segura de la imagen local para la pestaña
+logo_path = "logo.png"
+if os.path.exists(logo_path):
+    icon_image = Image.open(logo_path)
+else:
+    icon_image = "🇵🇾"
+
 st.set_page_config(
     page_title="Lector Facturas PY - Suite Contable", 
-    page_icon="🇵🇾", 
+    page_icon=icon_image, 
     layout="wide"
 )
 
-# Esto fuerza a la Mac/Celular a tomar logo.png como el icono de la aplicación instalada
+# URL directa del logo en GitHub para los accesos directos (Mac / Celular)
+raw_logo_url = "https://raw.githubusercontent.com/josemriego-star/lector-facturas-py/main/logo.png"
+
 st.markdown(
-    """
-    <link rel="apple-touch-icon" href="logo.png">
-    <link rel="icon" type="image/png" href="logo.png">
+    f"""
+    <link rel="apple-touch-icon" href="{raw_logo_url}">
+    <link rel="icon" type="image/png" href="{raw_logo_url}">
     """,
     unsafe_allow_html=True
 )

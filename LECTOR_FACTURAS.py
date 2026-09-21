@@ -15,6 +15,15 @@ st.set_page_config(
     layout="wide"
 )
 
+# Esto fuerza a la Mac/Celular a tomar logo.png como el icono de la aplicación instalada
+st.markdown(
+    """
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
+    """,
+    unsafe_allow_html=True
+)
+
 if "lista_resultados" not in st.session_state:
     st.session_state.lista_resultados = []
 
@@ -68,7 +77,7 @@ if api_key:
             for idx, file in enumerate(uploaded_files):
                 try:
                     status_text.text(f"Analizando {file.name} ({idx+1}/{len(uploaded_files)})...")
-                    url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                    url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
                     img_b64 = base64.b64encode(file.getvalue()).decode('utf-8')
                     
                     prompt = """Extrae la información de esta factura física de Paraguay en formato JSON exacto:

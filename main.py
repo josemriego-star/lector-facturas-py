@@ -140,25 +140,25 @@ async def exportar_excel(datos_facturas: list):
                 ])
         
         # Corrección de bucles de alineación y formatos numéricos para los guaraníes
-                # --- FORMATEO VISUAL DE CELDAS DE DATOS ---
+        # --- FORMATEO VISUAL DE CELDAS DE DATOS ---
         for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=10):
             for cell in row:
                 cell.font = Font(name="Arial", size=10)
                 cell.border = border_cell
                 
                 # Alinear al centro columnas de Fechas, Facturas, Tasa e IVA (Columnas 1, 2, 5, 6 y 8)
-                if cell.column in:
+                if cell.column in (1, 2, 5, 6, 8):
                     cell.alignment = Alignment(horizontal="center")
                 
                 # Formato contable para columnas de dinero en Guaraníes (Columnas 7, 9 y 10)
-                if cell.column in:
+                if cell.column in (7, 9, 10):
                     cell.number_format = '#,##0'
                     cell.alignment = Alignment(horizontal="right")
         
         # Ajuste de tamaño automático de columnas seguro
         for col in ws.columns:
             max_len = max(len(str(cell.value or '')) for cell in col)
-            col_letter = col[0].column_letter # Acceso seguro al identificador en openpyxl
+            col_letter = col.column_letter # Acceso seguro al identificador en openpyxl
             ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
             
         stream = BytesIO()

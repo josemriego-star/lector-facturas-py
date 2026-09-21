@@ -25,11 +25,13 @@ st.set_page_config(
     layout="wide"
 )
 
-# Aquí borraste todo el bloque viejo de components.html ❌
-
-if "lista_resultados" not in st.session_state:
-    st.session_state.lista_resultados = []
-
+# Inyección directa y local sin iframe en el cuerpo del documento principal
+st.html(
+    """
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <link rel="apple-touch-icon-precomposed" href="/static/apple-touch-icon.png">
+    """
+)
 
 if "lista_resultados" not in st.session_state:
     st.session_state.lista_resultados = []

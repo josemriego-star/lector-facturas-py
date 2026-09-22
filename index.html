@@ -38,13 +38,17 @@
         }
         .header-text h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
         .header-text p { margin: 2px 0 0 0; font-size: 11px; opacity: 0.8; }
-        .badge-online {
-            background-color: rgba(255,255,255,0.2);
-            padding: 4px 10px;
+        .btn-inicio {
+            background-color: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
+            cursor: pointer;
         }
+        .btn-inicio:hover { background-color: rgba(255,255,255,0.3); }
         main {
             max-width: 480px;
             margin: 20px auto;
@@ -59,7 +63,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             border: 1px solid #e1e6eb;
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
         .upload-card input[type="file"] {
             position: absolute;
@@ -73,6 +77,19 @@
         .upload-icon { font-size: 32px; margin-bottom: 10px; color: #004a99; }
         .upload-title { font-size: 15px; font-weight: 600; color: #222222; margin: 0 0 4px 0; }
         .upload-desc { font-size: 12px; color: #888888; margin: 0; }
+        .multipage-hint {
+            font-size: 11px;
+            color: #004a99;
+            background-color: #e6f0ff;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .multipage-hint label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; }
         .btn-excel {
             display: none;
             width: 100%;
@@ -114,6 +131,7 @@
             border-bottom: 1px solid #e1e6eb;
             margin-bottom: 15px;
         }
+        .invoice-card.no-factura { border-left-color: #b8860b; }
         .invoice-header {
             display: flex;
             justify-content: space-between;
@@ -139,10 +157,11 @@
             font-size: 13px;
             padding: 6px 0;
             border-bottom: 1px dashed #f0f3f6;
+            gap: 8px;
         }
         .item-desc { color: #333333; margin: 0; max-width: 70%; }
         .item-sub { font-size: 11px; color: #888888; margin: 2px 0 0 0; }
-        .item-total { font-weight: 600; color: #222222; margin: 0; }
+        .item-total { font-weight: 600; color: #222222; margin: 0; white-space: nowrap; }
         .total-box {
             background-color: #f8fafc;
             border-radius: 10px;
@@ -154,6 +173,93 @@
         }
         .total-label { font-size: 13px; font-weight: 700; color: #444444; }
         .total-amount { font-size: 17px; font-weight: 800; color: #004a99; }
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .card-actions button {
+            flex: 1;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-editar { background-color: #eef2ff; color: #004a99; }
+        .btn-guardar { background-color: #004a99; color: white; }
+        .btn-borrar { background-color: #fdeaea; color: #c0392b; }
+        .edit-input {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #cfd8e3;
+            border-radius: 6px;
+            padding: 4px 6px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+        .edit-item-grid {
+            display: grid;
+            grid-template-columns: 2.2fr 0.7fr 0.9fr 0.9fr;
+            gap: 4px;
+            padding: 6px 0;
+            border-bottom: 1px dashed #f0f3f6;
+        }
+        .edit-item-grid input { font-size: 11px; padding: 4px; }
+        .edit-labels { display: grid; grid-template-columns: 2.2fr 0.7fr 0.9fr 0.9fr; gap: 4px; font-size: 9px; color: #999; margin-bottom: 2px; }
+        .no-factura-box {
+            font-size: 12px;
+            color: #555;
+            background-color: #fbf7ea;
+            border-radius: 8px;
+            padding: 10px;
+            white-space: pre-wrap;
+        }
+        .empty-state {
+            text-align: center;
+            font-size: 13px;
+            color: #999;
+            padding: 30px 0;
+        }
+        details.history-box {
+            background-color: white;
+            border-radius: 16px;
+            padding: 14px 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            border: 1px solid #e1e6eb;
+            margin-top: 20px;
+        }
+        details.history-box summary {
+            font-size: 13px;
+            font-weight: 700;
+            color: #004a99;
+            cursor: pointer;
+        }
+        .history-item {
+            font-size: 12px;
+            color: #444;
+            padding: 8px 0;
+            border-bottom: 1px dashed #f0f3f6;
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-item .hi-name { font-weight: 600; color: #222; }
+        .history-item .hi-meta { font-size: 10px; color: #999; }
+        .btn-clear-hist {
+            margin-top: 8px;
+            width: 100%;
+            background: #fdeaea;
+            color: #c0392b;
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -166,7 +272,7 @@
                 <p>Gestión Contable Automatizada</p>
             </div>
         </div>
-        <div class="badge-online">Sistema Activo</div>
+        <button class="btn-inicio" onclick="volverInicio()">⟲ Inicio</button>
     </header>
 
     <main>
@@ -181,34 +287,157 @@
             <p id="loadingText" class="upload-desc" style="display:none; color:#004a99; font-weight:600; margin-top:10px;">Analizando mercaderías con Gemini...</p>
         </div>
 
+        <div class="multipage-hint">
+            <label>
+                <input type="checkbox" id="chkMultipagina" onchange="toggleMultipagina()">
+                La factura no entra en una sola foto (varias páginas)
+            </label>
+        </div>
+
         <button id="btnExcel" class="btn-excel" onclick="descargarExcelCompleto()">
             📥 Descargar Reporte Excel (.xlsx)
         </button>
 
         <div id="resultadosContainer"></div>
+
+        <details class="history-box">
+            <summary>🕘 Historial (<span id="histCount">0</span>)</summary>
+            <div id="historialContainer" style="margin-top:10px;">
+                <p class="empty-state" id="histEmpty">Sin lecturas registradas todavía.</p>
+            </div>
+            <button class="btn-clear-hist" onclick="borrarHistorial()">Borrar historial</button>
+        </details>
     </main>
 
     <script>
-        let todasLasFacturas = [];
+        let todasLasFacturas = []; // [{id, data}] — lo que se procesó en esta sesión (para exportar a Excel)
+        let paginasPendientes = []; // páginas acumuladas cuando está activo el modo "multipágina"
 
         // >>> CAMBIÁ ESTO por la dirección real de tu servicio en Render (sin barra al final)
         const API_URL = "https://lector-facturas-py.onrender.com";
 
+        const HIST_KEY = "lector_facturas_historial";
+
+        // ---------- Utilidades de Historial (localStorage) ----------
+        function leerHistorial() {
+            try {
+                return JSON.parse(localStorage.getItem(HIST_KEY) || "[]");
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function guardarEnHistorial(data) {
+            const historial = leerHistorial();
+            historial.unshift({
+                fecha_registro: new Date().toLocaleString('es-PY'),
+                data: data
+            });
+            // Límite razonable para no saturar localStorage
+            const recortado = historial.slice(0, 200);
+            localStorage.setItem(HIST_KEY, JSON.stringify(recortado));
+            renderHistorial();
+        }
+
+        function borrarHistorial() {
+            if (!confirm('¿Borrar todo el historial? Esta acción no se puede deshacer.')) return;
+            localStorage.removeItem(HIST_KEY);
+            renderHistorial();
+        }
+
+        function renderHistorial() {
+            const historial = leerHistorial();
+            document.getElementById('histCount').textContent = historial.length;
+            const cont = document.getElementById('historialContainer');
+            if (historial.length === 0) {
+                cont.innerHTML = '<p class="empty-state" id="histEmpty">Sin lecturas registradas todavía.</p>';
+                return;
+            }
+            cont.innerHTML = historial.map(h => {
+                const d = h.data;
+                if (d.es_factura === false) {
+                    return `<div class="history-item">
+                        <div>
+                            <div class="hi-name">📄 ${d.tipo_documento || 'Documento no identificado'}</div>
+                            <div class="hi-meta">${h.fecha_registro}</div>
+                        </div>
+                    </div>`;
+                }
+                return `<div class="history-item">
+                    <div>
+                        <div class="hi-name">${d.emisor || 'Emisor'}</div>
+                        <div class="hi-meta">RUC: ${d.ruc || 'S/R'} • Fac: ${d.nro_factura || 'S/N'} • ${h.fecha_registro}</div>
+                    </div>
+                    <div class="hi-meta" style="text-align:right; white-space:nowrap;">${Number(d.total || 0).toLocaleString('es-PY')} ₲</div>
+                </div>`;
+            }).join('');
+        }
+
+        // ---------- Inicio / Reset ----------
+        function volverInicio() {
+            todasLasFacturas = [];
+            paginasPendientes = [];
+            document.getElementById('resultadosContainer').innerHTML = '';
+            document.getElementById('btnExcel').style.display = 'none';
+            document.getElementById('chkMultipagina').checked = false;
+            actualizarHintMultipagina();
+            const input = document.getElementById('fileInput');
+            input.value = '';
+        }
+
+        function toggleMultipagina() {
+            paginasPendientes = [];
+            actualizarHintMultipagina();
+        }
+
+        function actualizarHintMultipagina() {
+            const activo = document.getElementById('chkMultipagina').checked;
+            const desc = document.getElementById('uploadPrompt').querySelector('.upload-desc');
+            if (activo) {
+                desc.textContent = `Modo varias páginas activo — páginas capturadas: ${paginasPendientes.length}. Sacá todas las fotos y luego desactivá la casilla para analizarlas juntas.`;
+            } else {
+                desc.textContent = 'Formatos JPG o PNG automáticos';
+            }
+        }
+
+        // ---------- Captura / Procesamiento ----------
         async function procesarArchivo() {
             const input = document.getElementById('fileInput');
+            if (!input.files || input.files.length === 0) return;
+
+            const modoMultipagina = document.getElementById('chkMultipagina').checked;
+
+            if (modoMultipagina) {
+                // Acumular la foto como una página más, sin llamar todavía al backend
+                paginasPendientes.push(input.files[0]);
+                actualizarHintMultipagina();
+                input.value = '';
+                return;
+            }
+
+            const archivos = paginasPendientes.length > 0
+                ? [...paginasPendientes, input.files[0]]
+                : [input.files[0]];
+
+            await enviarAlBackend(archivos);
+            paginasPendientes = [];
+            input.value = '';
+        }
+
+        async function enviarAlBackend(archivos) {
             const prompt = document.getElementById('uploadPrompt');
             const loader = document.getElementById('loader');
             const loadingText = document.getElementById('loadingText');
-            const container = document.getElementById('resultadosContainer');
-
-            if (!input.files || input.files.length === 0) return;
 
             prompt.style.display = 'none';
             loader.style.display = 'block';
             loadingText.style.display = 'block';
+            loadingText.textContent = archivos.length > 1
+                ? `Analizando ${archivos.length} páginas con Gemini...`
+                : 'Analizando mercaderías con Gemini...';
 
             const formData = new FormData();
-            formData.append('file', input.files[0]);
+            archivos.forEach(f => formData.append('files', f));
 
             try {
                 const response = await fetch(API_URL + "/procesar", {
@@ -223,43 +452,17 @@
                 }
 
                 const data = await response.json();
-                todasLasFacturas.push(data);
-                document.getElementById('btnExcel').style.display = 'block';
+                guardarEnHistorial(data);
 
-                let itemsHtml = '';
-                if (data.items && data.items.length > 0) {
-                    data.items.forEach(item => {
-                        itemsHtml += `
-                            <div class="item-row">
-                                <div>
-                                    <p class="item-desc">${item.descripcion || 'Ítem'}</p>
-                                    <p class="item-sub">Cant: ${item.cantidad || 1} • IVA: ${item.iva || '10%'}</p>
-                                </div>
-                                <p class="item-total">${Number(item.total_item).toLocaleString('es-PY')} ₲</p>
-                            </div>`;
-                    });
+                if (data.es_factura === false) {
+                    descargarTxtNoFactura(data);
+                    renderTarjetaNoFactura(data);
+                } else {
+                    const id = 'f_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                    todasLasFacturas.push({ id, data });
+                    document.getElementById('btnExcel').style.display = 'block';
+                    renderTarjetaFactura(id, data);
                 }
-
-                const card = `
-                    <div class="invoice-card">
-                        <div class="invoice-header">
-                            <div>
-                                <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span>
-                                <h3 class="invoice-emisor">${data.emisor || 'Emisor'}</h3>
-                                <p class="invoice-meta">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <p class="invoice-meta" style="margin:0;">Fecha</p>
-                                <p class="invoice-emisor" style="font-size:13px;">${data.fecha || '--/--/----'}</p>
-                            </div>
-                        </div>
-                        <div>${itemsHtml || '<p class="upload-desc">No se desglosaron ítems.</p>'}</div>
-                        <div class="total-box">
-                            <span class="total-label">Total Liquidado</span>
-                            <span class="total-amount">${Number(data.total).toLocaleString('es-PY')} ₲</span>
-                        </div>
-                    </div>`;
-                container.insertAdjacentHTML('afterbegin', card);
 
             } catch (error) {
                 alert('Fallo en el procesamiento: ' + error.message);
@@ -267,17 +470,216 @@
                 prompt.style.display = 'block';
                 loader.style.display = 'none';
                 loadingText.style.display = 'none';
-                input.value = '';
+                document.getElementById('chkMultipagina').checked = false;
+                actualizarHintMultipagina();
             }
         }
 
+        // ---------- Descarga TXT para no-facturas ----------
+        function descargarTxtNoFactura(data) {
+            const contenido = `TIPO DE DOCUMENTO: ${data.tipo_documento || 'No identificado'}\nFECHA DE LECTURA: ${new Date().toLocaleString('es-PY')}\n\n${data.texto_detectado || '(sin texto detectado)'}`;
+            const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `documento_${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function renderTarjetaNoFactura(data) {
+            const container = document.getElementById('resultadosContainer');
+            const card = `
+                <div class="invoice-card no-factura">
+                    <div class="invoice-header">
+                        <div>
+                            <span class="invoice-condicion" style="background-color:#fbf0d9; color:#b8860b;">NO ES FACTURA</span>
+                            <h3 class="invoice-emisor">${data.tipo_documento || 'Documento'}</h3>
+                            <p class="invoice-meta">Se descargó el detalle como archivo .txt</p>
+                        </div>
+                    </div>
+                    <div class="no-factura-box">${(data.texto_detectado || 'Sin texto detectado').substring(0, 400)}${(data.texto_detectado || '').length > 400 ? '…' : ''}</div>
+                </div>`;
+            container.insertAdjacentHTML('afterbegin', card);
+        }
+
+        // ---------- Render de tarjetas de factura ----------
+        function renderTarjetaFactura(id, data) {
+            const container = document.getElementById('resultadosContainer');
+            const wrapper = document.createElement('div');
+            wrapper.id = id;
+            wrapper.innerHTML = vistaFactura(id, data);
+            container.insertAdjacentElement('afterbegin', wrapper.firstElementChild);
+        }
+
+        function vistaFactura(id, data) {
+            let itemsHtml = '';
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(item => {
+                    itemsHtml += `
+                        <div class="item-row">
+                            <div>
+                                <p class="item-desc">${item.descripcion || 'Ítem'}</p>
+                                <p class="item-sub">Cant: ${item.cantidad || 1} • IVA: ${item.iva || '10%'}</p>
+                            </div>
+                            <p class="item-total">${Number(item.total_item || 0).toLocaleString('es-PY')} ₲</p>
+                        </div>`;
+                });
+            }
+
+            return `
+                <div class="invoice-card" id="card-${id}">
+                    <div class="invoice-header">
+                        <div>
+                            <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span>
+                            <h3 class="invoice-emisor">${data.emisor || 'Emisor'}</h3>
+                            <p class="invoice-meta">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p class="invoice-meta" style="margin:0;">Fecha</p>
+                            <p class="invoice-emisor" style="font-size:13px;">${data.fecha || '--/--/----'}</p>
+                        </div>
+                    </div>
+                    <div>${itemsHtml || '<p class="upload-desc">No se desglosaron ítems.</p>'}</div>
+                    <div class="total-box">
+                        <span class="total-label">Total Liquidado</span>
+                        <span class="total-amount">${Number(data.total || 0).toLocaleString('es-PY')} ₲</span>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-editar" onclick="activarEdicion('${id}')">✏️ Editar</button>
+                        <button class="btn-borrar" onclick="borrarFactura('${id}')">🗑️ Borrar</button>
+                    </div>
+                </div>`;
+        }
+
+        function vistaEdicion(id, data) {
+            const items = data.items && data.items.length > 0 ? data.items : [];
+            let itemsHtml = items.map((item, idx) => `
+                <div class="edit-item-grid" data-idx="${idx}">
+                    <input class="edit-input e-desc" value="${(item.descripcion || '').replace(/"/g, '&quot;')}">
+                    <input class="edit-input e-cant" type="number" step="any" value="${item.cantidad ?? 1}">
+                    <input class="edit-input e-iva" value="${item.iva || '10%'}">
+                    <input class="edit-input e-total" type="number" step="any" value="${item.total_item ?? 0}">
+                </div>`).join('');
+
+            return `
+                <div class="invoice-card" id="card-${id}">
+                    <div class="invoice-header">
+                        <div style="width:100%;">
+                            <label style="font-size:10px; color:#999;">Condición</label>
+                            <input class="edit-input campo-condicion" value="${data.condicion || 'CONTADO'}" style="margin-bottom:6px;">
+                            <label style="font-size:10px; color:#999;">Emisor</label>
+                            <input class="edit-input campo-emisor" value="${(data.emisor || '').replace(/"/g, '&quot;')}" style="margin-bottom:6px;">
+                            <div style="display:flex; gap:6px;">
+                                <div style="flex:1;">
+                                    <label style="font-size:10px; color:#999;">RUC</label>
+                                    <input class="edit-input campo-ruc" value="${data.ruc || ''}">
+                                </div>
+                                <div style="flex:1;">
+                                    <label style="font-size:10px; color:#999;">N° Factura</label>
+                                    <input class="edit-input campo-nrofactura" value="${data.nro_factura || ''}">
+                                </div>
+                                <div style="flex:1;">
+                                    <label style="font-size:10px; color:#999;">Fecha</label>
+                                    <input class="edit-input campo-fecha" value="${data.fecha || ''}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="edit-labels">
+                        <span>Descripción</span><span>Cant.</span><span>IVA</span><span>Total ítem</span>
+                    </div>
+                    <div class="lista-items-edit">${itemsHtml || '<p class="upload-desc">Sin ítems.</p>'}</div>
+                    <div class="total-box">
+                        <span class="total-label">Total Liquidado (auto)</span>
+                        <span class="total-amount" id="totalCalc-${id}">${Number(data.total || 0).toLocaleString('es-PY')} ₲</span>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-guardar" onclick="guardarEdicion('${id}')">💾 Guardar</button>
+                        <button class="btn-borrar" onclick="cancelarEdicion('${id}')">✖️ Cancelar</button>
+                    </div>
+                </div>`;
+        }
+
+        function activarEdicion(id) {
+            const item = todasLasFacturas.find(f => f.id === id);
+            if (!item) return;
+            const card = document.getElementById(`card-${id}`);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaEdicion(id, item.data);
+            card.replaceWith(wrapper.firstElementChild);
+
+            // Recalcular total en vivo mientras se editan los ítems
+            document.querySelectorAll(`#card-${id} .e-total`).forEach(inp => {
+                inp.addEventListener('input', () => recalcularTotalEnVivo(id));
+            });
+        }
+
+        function recalcularTotalEnVivo(id) {
+            const totales = Array.from(document.querySelectorAll(`#card-${id} .e-total`)).map(i => Number(i.value) || 0);
+            const suma = totales.reduce((a, b) => a + b, 0);
+            document.getElementById(`totalCalc-${id}`).textContent = suma.toLocaleString('es-PY') + ' ₲';
+        }
+
+        function cancelarEdicion(id) {
+            const item = todasLasFacturas.find(f => f.id === id);
+            if (!item) return;
+            const card = document.getElementById(`card-${id}`);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaFactura(id, item.data);
+            card.replaceWith(wrapper.firstElementChild);
+        }
+
+        function guardarEdicion(id) {
+            const item = todasLasFacturas.find(f => f.id === id);
+            if (!item) return;
+            const cardEl = document.getElementById(`card-${id}`);
+
+            const nuevosItems = Array.from(cardEl.querySelectorAll('.edit-item-grid')).map(row => ({
+                descripcion: row.querySelector('.e-desc').value,
+                cantidad: Number(row.querySelector('.e-cant').value) || 1,
+                iva: row.querySelector('.e-iva').value,
+                total_item: Number(row.querySelector('.e-total').value) || 0
+            }));
+
+            const totalNuevo = nuevosItems.reduce((a, b) => a + (b.total_item || 0), 0);
+
+            item.data = {
+                ...item.data,
+                condicion: cardEl.querySelector('.campo-condicion').value,
+                emisor: cardEl.querySelector('.campo-emisor').value,
+                ruc: cardEl.querySelector('.campo-ruc').value,
+                nro_factura: cardEl.querySelector('.campo-nrofactura').value,
+                fecha: cardEl.querySelector('.campo-fecha').value,
+                items: nuevosItems,
+                total: totalNuevo
+            };
+
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaFactura(id, item.data);
+            cardEl.replaceWith(wrapper.firstElementChild);
+        }
+
+        function borrarFactura(id) {
+            if (!confirm('¿Quitar esta factura de la lista a exportar?')) return;
+            todasLasFacturas = todasLasFacturas.filter(f => f.id !== id);
+            const card = document.getElementById(`card-${id}`);
+            if (card) card.remove();
+            if (todasLasFacturas.length === 0) {
+                document.getElementById('btnExcel').style.display = 'none';
+            }
+        }
+
+        // ---------- Exportar Excel ----------
         async function descargarExcelCompleto() {
             if (todasLasFacturas.length === 0) return;
             try {
                 const response = await fetch(API_URL + "/exportar-excel", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(todasLasFacturas)
+                    body: JSON.stringify(todasLasFacturas.map(f => f.data))
                 });
                 if (!response.ok) throw new Error("Error al generar Excel");
                 const blob = await response.blob();
@@ -288,10 +690,14 @@
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
+                window.URL.revokeObjectURL(url);
             } catch (error) {
                 alert("Error al descargar Excel: " + error.message);
             }
         }
+
+        // ---------- Inicialización ----------
+        renderHistorial();
     </script>
 </body>
 </html>

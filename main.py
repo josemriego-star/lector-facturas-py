@@ -23,54 +23,83 @@ app.add_middleware(
 api_key_servidor = os.getenv("GEMINI_API_KEY")
 
 
+def a_numero(valor, defecto=0.0):
+    """Convierte a número sin romper si viene vacío o con texto."""
+    try:
+        if valor is None or valor == "":
+            return defecto
+        return float(valor)
+    except (ValueError, TypeError):
+        return defecto
+
+
 @app.get("/")
 async def inicio():
     return {"estado": "activo"}
 
 
 @app.post("/procesar")
-async def procesar_factura(file: UploadFile = File(...)):
+async def procesar_factura(files: List[UploadFile] = File(...)):
+    """
+    Acepta una o varias imágenes (páginas) de UN MISMO comprobante.
+    Si se envía más de un archivo, Gemini analiza todas las páginas
+    en una sola pasada y arma UN solo resultado combinado (útil cuando
+    la factura no entra completa en una sola foto).
+    """
     if not api_key_servidor:
         raise HTTPException(status_code=500, detail="API Key de Gemini no configurada en el servidor.")
 
-    try:
-        contents = await file.read()
-        img_b64 = base64.b64encode(contents).decode("utf-8")
+    if not files:
+        raise HTTPException(status_code=400, detail="No se recibió ningún archivo.")
 
+    try:
         url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={api_key_servidor}"
 
-        prompt = """Extrae la información de esta factura física de Paraguay en formato JSON exacto:
-        {
-            "ruc": "sin dv",
-            "emisor": "razon social",
-            "fecha": "YYYY-MM-DD",
-            "timbrado": "numero",
-            "nro_factura": "000-000-0000000",
-            "items": [
-                {
-                    "cantidad": 1,
-                    "descripcion": "detalle del producto o servicio",
-                    "unidad_medida": "litro, kg, unidad, etc.",
-                    "precio_unitario": 0,
-                    "total_item": 0,
-                    "iva": "10%, 5% o EXENTA"
-                }
-            ],
-            "total": 0,
-            "condicion": "CONTADO o CREDITO"
-        }
-        Responde únicamente el JSON puro, sin texto adicional ni formateo markdown."""
+        multipagina = len(files) > 1
 
-        payload = {
-            "contents": [{
-                "parts": [
-                    {"text": prompt},
-                    {"inline_data": {"mime_type": file.content_type or "image/jpeg", "data": img_b64}}
-                ]
-            }]
-        }
+        prompt = f"""Analiza {"las siguientes imágenes, que son MÚLTIPLES PARTES/PÁGINAS de UN MISMO comprobante" if multipagina else "esta imagen"} y responde SOLO con un JSON puro (sin texto adicional ni markdown).
+{"Combina la información de todas las imágenes en un único resultado (por ejemplo, si el encabezado está en una foto y el detalle de ítems continúa en otra, unificá todo en una sola lista de items y un solo total)." if multipagina else ""}
 
-        response = requests.post(url_api, json=payload, timeout=60)
+PASO 1: Determina si la imagen (o conjunto de imágenes) es una factura o comprobante de compra de Paraguay.
+
+CASO A - SI ES UNA FACTURA, responde con este formato exacto:
+{{
+    "es_factura": true,
+    "ruc": "sin dv",
+    "emisor": "razon social",
+    "fecha": "YYYY-MM-DD",
+    "timbrado": "numero",
+    "nro_factura": "000-000-0000000",
+    "items": [
+        {{
+            "cantidad": 1,
+            "descripcion": "detalle del producto o servicio",
+            "unidad_medida": "litro, kg, unidad, etc.",
+            "precio_unitario": 0,
+            "total_item": 0,
+            "iva": "10%, 5% o EXENTA"
+        }}
+    ],
+    "total": 0,
+    "condicion": "CONTADO o CREDITO"
+}}
+
+CASO B - SI NO ES UNA FACTURA (documento, ticket, nota, foto, etc.), responde con este formato:
+{{
+    "es_factura": false,
+    "tipo_documento": "que tipo de documento o imagen parece ser",
+    "texto_detectado": "transcripcion completa y ordenada de todo el texto legible, seguida de una breve descripcion de lo que se ve"
+}}"""
+
+        parts = [{"text": prompt}]
+        for f in files:
+            contenido = await f.read()
+            img_b64 = base64.b64encode(contenido).decode("utf-8")
+            parts.append({"inline_data": {"mime_type": f.content_type or "image/jpeg", "data": img_b64}})
+
+        payload = {"contents": [{"parts": parts}]}
+
+        response = requests.post(url_api, json=payload, timeout=90)
         res_json = response.json()
 
         if "candidates" in res_json:
@@ -114,15 +143,21 @@ async def exportar_excel(datos_facturas: List[Any]):
             cell.alignment = alignment_center
 
         for factura in datos_facturas:
+            if not isinstance(factura, dict):
+                continue
+            # Los archivos que no eran facturas no van al Excel
+            if factura.get("es_factura") is False:
+                continue
+
             fecha = factura.get("fecha", "")
             nro_factura = factura.get("nro_factura", "")
             proveedor = factura.get("emisor", "")
 
-            for item in factura.get("items", []):
-                cantidad = float(item.get("cantidad", 1) or 1)
+            for item in factura.get("items", []) or []:
+                cantidad = a_numero(item.get("cantidad"), 1.0)
                 descripcion = item.get("descripcion", "")
                 unidad = item.get("unidad_medida", "unidad")
-                subtotal_c_iva = float(item.get("total_item", 0) or 0)
+                subtotal_c_iva = a_numero(item.get("total_item"), 0.0)
 
                 tasa_str = str(item.get("iva", "10")).replace("%", "").strip().upper()
                 if "EXENTA" in tasa_str or tasa_str == "0":

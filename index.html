@@ -282,9 +282,58 @@
             font-weight: 700;
             cursor: pointer;
         }
+        .invoice-card.clickable { cursor: pointer; }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(20, 26, 33, 0.6);
+            z-index: 1000;
+            padding: 20px 12px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .modal-overlay.abierto { display: block; }
+        .modal-content {
+            background-color: white;
+            border-radius: 16px;
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 22px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background-color: #f0f3f6;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #555;
+            cursor: pointer;
+        }
+        .modal-content .invoice-emisor { font-size: 19px; }
+        .modal-content .item-desc { font-size: 15px; }
+        .modal-content .item-sub { font-size: 13px; }
+        .modal-content .item-total { font-size: 15px; }
+        .modal-content .no-factura-box { font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+        .modal-content .total-amount { font-size: 20px; }
     </style>
 </head>
 <body>
+
+    <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) cerrarModal()">
+        <div class="modal-content" id="modalContent">
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
 
     <header>
         <div class="header-title-box">
@@ -338,6 +387,7 @@
 
     <script>
         let todasLasFacturas = []; // [{id, data}] — lo que se procesó en esta sesión (para exportar a Excel)
+        let todosLosDocumentos = []; // [{id, data}] — lecturas que NO son factura (para editar/descargar/borrar)
         let paginasPendientes = []; // páginas acumuladas cuando está activo el modo "multipágina"
         let tipoSeleccionado = 'factura'; // 'factura' | 'otro' — para no hacerle buscar ítems a Gemini si no corresponde
 
@@ -348,7 +398,7 @@
         }
 
         // >>> CAMBIÁ ESTO por la dirección real de tu servicio en Render (sin barra al final)
-        const API_URL = "https://lector-facturas-py.onrender.com";
+        const API_URL = "https://TU-SERVICIO.onrender.com";
 
         const HIST_KEY = "lector_facturas_historial";
 
@@ -410,12 +460,14 @@
         // ---------- Inicio / Reset ----------
         function volverInicio() {
             todasLasFacturas = [];
+            todosLosDocumentos = [];
             paginasPendientes = [];
             document.getElementById('resultadosContainer').innerHTML = '';
             document.getElementById('btnExcel').style.display = 'none';
             document.getElementById('chkMultipagina').checked = false;
             actualizarHintMultipagina();
             fijarTipo('factura');
+            cerrarModal();
             const input = document.getElementById('fileInput');
             input.value = '';
         }
@@ -467,9 +519,9 @@
             prompt.style.display = 'none';
             loader.style.display = 'block';
             loadingText.style.display = 'block';
-            const textoBase = tipoSeleccionado === 'otro' ? 'Leyendo documento...' : 'Analizando mercaderías...';
+            const textoBase = tipoSeleccionado === 'otro' ? 'Leyendo documento con Gemini...' : 'Analizando mercaderías con Gemini...';
             loadingText.textContent = archivos.length > 1
-                ? `Analizando ${archivos.length} páginas...`
+                ? `Analizando ${archivos.length} páginas con Gemini...`
                 : textoBase;
 
             const formData = new FormData();
@@ -492,8 +544,9 @@
                 guardarEnHistorial(data);
 
                 if (data.es_factura === false) {
-                    descargarTxtNoFactura(data);
-                    renderTarjetaNoFactura(data);
+                    const id = 'd_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                    todosLosDocumentos.push({ id, data });
+                    renderTarjetaNoFactura(id, data);
                 } else {
                     const id = 'f_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
                     todasLasFacturas.push({ id, data });
@@ -526,20 +579,141 @@
             window.URL.revokeObjectURL(url);
         }
 
-        function renderTarjetaNoFactura(data) {
+        function descargarDocumento(id) {
+            const item = todosLosDocumentos.find(d => d.id === id);
+            if (!item) return;
+            descargarTxtNoFactura(item.data);
+        }
+
+        function renderTarjetaNoFactura(id, data) {
             const container = document.getElementById('resultadosContainer');
-            const card = `
-                <div class="invoice-card no-factura">
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaNoFactura(id, data);
+            container.insertAdjacentElement('afterbegin', wrapper.firstElementChild);
+        }
+
+        function vistaNoFactura(id, data) {
+            const texto = data.texto_detectado || 'Sin texto detectado';
+            return `
+                <div class="invoice-card no-factura clickable" id="card-${id}" onclick="abrirModalDocumento('${id}')">
                     <div class="invoice-header">
                         <div>
                             <span class="invoice-condicion" style="background-color:#fbf0d9; color:#b8860b;">NO ES FACTURA</span>
                             <h3 class="invoice-emisor">${data.tipo_documento || 'Documento'}</h3>
-                            <p class="invoice-meta">Se descargó el detalle como archivo .txt</p>
+                            <p class="invoice-meta">Tocá la tarjeta para verlo en pantalla completa</p>
                         </div>
                     </div>
-                    <div class="no-factura-box">${(data.texto_detectado || 'Sin texto detectado').substring(0, 400)}${(data.texto_detectado || '').length > 400 ? '…' : ''}</div>
+                    <div class="no-factura-box">${texto.substring(0, 400)}${texto.length > 400 ? '…' : ''}</div>
+                    <div class="card-actions">
+                        <button class="btn-editar" onclick="event.stopPropagation(); activarEdicionDoc('${id}')">✏️ Editar</button>
+                        <button class="btn-guardar" onclick="event.stopPropagation(); descargarDocumento('${id}')">📥 Descargar</button>
+                        <button class="btn-borrar" onclick="event.stopPropagation(); borrarDocumento('${id}')">🗑️ Borrar</button>
+                    </div>
                 </div>`;
-            container.insertAdjacentHTML('afterbegin', card);
+        }
+
+        function vistaEdicionDoc(id, data) {
+            return `
+                <div class="invoice-card no-factura" id="card-${id}">
+                    <div class="invoice-header">
+                        <div style="width:100%;">
+                            <label style="font-size:10px; color:#999;">Tipo de documento</label>
+                            <input class="edit-input campo-tipodoc" value="${(data.tipo_documento || '').replace(/"/g, '&quot;')}" style="margin-bottom:6px;">
+                        </div>
+                    </div>
+                    <label style="font-size:10px; color:#999;">Texto detectado</label>
+                    <textarea class="edit-input campo-texto" rows="8" style="resize:vertical;">${data.texto_detectado || ''}</textarea>
+                    <div class="card-actions">
+                        <button class="btn-guardar" onclick="guardarEdicionDoc('${id}')">💾 Guardar</button>
+                        <button class="btn-borrar" onclick="cancelarEdicionDoc('${id}')">✖️ Cancelar</button>
+                    </div>
+                </div>`;
+        }
+
+        function activarEdicionDoc(id) {
+            const item = todosLosDocumentos.find(d => d.id === id);
+            if (!item) return;
+            const card = document.getElementById(`card-${id}`);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaEdicionDoc(id, item.data);
+            card.replaceWith(wrapper.firstElementChild);
+        }
+
+        function cancelarEdicionDoc(id) {
+            const item = todosLosDocumentos.find(d => d.id === id);
+            if (!item) return;
+            const card = document.getElementById(`card-${id}`);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaNoFactura(id, item.data);
+            card.replaceWith(wrapper.firstElementChild);
+        }
+
+        function guardarEdicionDoc(id) {
+            const item = todosLosDocumentos.find(d => d.id === id);
+            if (!item) return;
+            const cardEl = document.getElementById(`card-${id}`);
+            item.data = {
+                ...item.data,
+                tipo_documento: cardEl.querySelector('.campo-tipodoc').value,
+                texto_detectado: cardEl.querySelector('.campo-texto').value
+            };
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaNoFactura(id, item.data);
+            cardEl.replaceWith(wrapper.firstElementChild);
+        }
+
+        function borrarDocumento(id) {
+            if (!confirm('¿Borrar esta lectura de la pantalla?')) return;
+            todosLosDocumentos = todosLosDocumentos.filter(d => d.id !== id);
+            const card = document.getElementById(`card-${id}`);
+            if (card) card.remove();
+        }
+
+        // ---------- Pantalla completa (modal) ----------
+        function abrirModalDocumento(id) {
+            const item = todosLosDocumentos.find(d => d.id === id);
+            if (!item) return;
+            const data = item.data;
+            const texto = data.texto_detectado || 'Sin texto detectado';
+            document.getElementById('modalBody').innerHTML = `
+                <span class="invoice-condicion" style="background-color:#fbf0d9; color:#b8860b;">NO ES FACTURA</span>
+                <h3 class="invoice-emisor" style="margin-top:6px;">${data.tipo_documento || 'Documento'}</h3>
+                <div class="no-factura-box" style="margin-top:12px;">${texto}</div>`;
+            document.getElementById('modalOverlay').classList.add('abierto');
+        }
+
+        function abrirModalFactura(id) {
+            const item = todasLasFacturas.find(f => f.id === id);
+            if (!item) return;
+            const data = item.data;
+            let itemsHtml = '';
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(item2 => {
+                    itemsHtml += `
+                        <div class="item-row">
+                            <div>
+                                <p class="item-desc">${item2.descripcion || 'Ítem'}</p>
+                                <p class="item-sub">Cant: ${item2.cantidad || 1} • IVA: ${item2.iva || '10%'}</p>
+                            </div>
+                            <p class="item-total">${Number(item2.total_item || 0).toLocaleString('es-PY')} ₲</p>
+                        </div>`;
+                });
+            }
+            document.getElementById('modalBody').innerHTML = `
+                <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span>
+                <h3 class="invoice-emisor">${data.emisor || 'Emisor'}</h3>
+                <p class="invoice-meta">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'} • Fecha: ${data.fecha || '--/--/----'}</p>
+                <div style="margin-top:10px;">${itemsHtml || '<p class="upload-desc">No se desglosaron ítems.</p>'}</div>
+                <div class="total-box">
+                    <span class="total-label">Total Liquidado</span>
+                    <span class="total-amount">${Number(data.total || 0).toLocaleString('es-PY')} ₲</span>
+                </div>`;
+            document.getElementById('modalOverlay').classList.add('abierto');
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalOverlay').classList.remove('abierto');
+            document.getElementById('modalBody').innerHTML = '';
         }
 
         // ---------- Render de tarjetas de factura ----------
@@ -567,7 +741,7 @@
             }
 
             return `
-                <div class="invoice-card" id="card-${id}">
+                <div class="invoice-card clickable" id="card-${id}" onclick="abrirModalFactura('${id}')">
                     <div class="invoice-header">
                         <div>
                             <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span>
@@ -585,8 +759,8 @@
                         <span class="total-amount">${Number(data.total || 0).toLocaleString('es-PY')} ₲</span>
                     </div>
                     <div class="card-actions">
-                        <button class="btn-editar" onclick="activarEdicion('${id}')">✏️ Editar</button>
-                        <button class="btn-borrar" onclick="borrarFactura('${id}')">🗑️ Borrar</button>
+                        <button class="btn-editar" onclick="event.stopPropagation(); activarEdicion('${id}')">✏️ Editar</button>
+                        <button class="btn-borrar" onclick="event.stopPropagation(); borrarFactura('${id}')">🗑️ Borrar</button>
                     </div>
                 </div>`;
         }

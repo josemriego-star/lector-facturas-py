@@ -398,7 +398,7 @@
         }
 
         // >>> CAMBIÁ ESTO por la dirección real de tu servicio en Render (sin barra al final)
-        const API_URL = "https://TU-SERVICIO.onrender.com";
+        const API_URL = "https://lector-facturas-py.onrender.com";
 
         const HIST_KEY = "lector_facturas_historial";
 
@@ -519,9 +519,9 @@
             prompt.style.display = 'none';
             loader.style.display = 'block';
             loadingText.style.display = 'block';
-            const textoBase = tipoSeleccionado === 'otro' ? 'Leyendo documento con Gemini...' : 'Analizando mercaderías con Gemini...';
+            const textoBase = tipoSeleccionado === 'otro' ? 'Leyendo documento...' : 'Analizando mercaderías...';
             loadingText.textContent = archivos.length > 1
-                ? `Analizando ${archivos.length} páginas con Gemini...`
+                ? `Analizando ${archivos.length} páginas...`
                 : textoBase;
 
             const formData = new FormData();

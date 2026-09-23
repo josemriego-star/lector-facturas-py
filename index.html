@@ -90,6 +90,28 @@
             gap: 8px;
         }
         .multipage-hint label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; }
+        .tipo-toggle {
+            display: flex;
+            background-color: white;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 12px;
+            border: 1px solid #e1e6eb;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .tipo-toggle button {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px 6px;
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #888;
+            cursor: pointer;
+        }
+        .tipo-toggle button.activo.tipo-factura { background-color: #e6f0ff; color: #004a99; }
+        .tipo-toggle button.activo.tipo-otro { background-color: #fbf0d9; color: #b8860b; }
         .btn-excel {
             display: none;
             width: 100%;
@@ -276,6 +298,11 @@
     </header>
 
     <main>
+        <div class="tipo-toggle">
+            <button type="button" id="btnTipoFactura" class="activo tipo-factura" onclick="fijarTipo('factura')">🧾 Es una factura</button>
+            <button type="button" id="btnTipoOtro" class="tipo-otro" onclick="fijarTipo('otro')">📄 Otro documento</button>
+        </div>
+
         <div class="upload-card">
             <input type="file" id="fileInput" accept="image/*" onchange="procesarArchivo()">
             <div id="uploadPrompt">
@@ -312,6 +339,13 @@
     <script>
         let todasLasFacturas = []; // [{id, data}] — lo que se procesó en esta sesión (para exportar a Excel)
         let paginasPendientes = []; // páginas acumuladas cuando está activo el modo "multipágina"
+        let tipoSeleccionado = 'factura'; // 'factura' | 'otro' — para no hacerle buscar ítems a Gemini si no corresponde
+
+        function fijarTipo(tipo) {
+            tipoSeleccionado = tipo;
+            document.getElementById('btnTipoFactura').classList.toggle('activo', tipo === 'factura');
+            document.getElementById('btnTipoOtro').classList.toggle('activo', tipo === 'otro');
+        }
 
         // >>> CAMBIÁ ESTO por la dirección real de tu servicio en Render (sin barra al final)
         const API_URL = "https://lector-facturas-py.onrender.com";
@@ -381,6 +415,7 @@
             document.getElementById('btnExcel').style.display = 'none';
             document.getElementById('chkMultipagina').checked = false;
             actualizarHintMultipagina();
+            fijarTipo('factura');
             const input = document.getElementById('fileInput');
             input.value = '';
         }
@@ -432,12 +467,14 @@
             prompt.style.display = 'none';
             loader.style.display = 'block';
             loadingText.style.display = 'block';
+            const textoBase = tipoSeleccionado === 'otro' ? 'Leyendo documento...' : 'Analizando mercaderías...';
             loadingText.textContent = archivos.length > 1
-                ? `Analizando ${archivos.length} páginas con Gemini...`
-                : 'Analizando mercaderías con Gemini...';
+                ? `Analizando ${archivos.length} páginas...`
+                : textoBase;
 
             const formData = new FormData();
             archivos.forEach(f => formData.append('files', f));
+            formData.append('modo', tipoSeleccionado);
 
             try {
                 const response = await fetch(API_URL + "/procesar", {

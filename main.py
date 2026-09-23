@@ -4,7 +4,7 @@ import requests
 import json
 from io import BytesIO
 from typing import List, Any
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
@@ -39,12 +39,18 @@ async def inicio():
 
 
 @app.post("/procesar")
-async def procesar_factura(files: List[UploadFile] = File(...)):
+async def procesar_factura(files: List[UploadFile] = File(...), modo: str = Form("auto")):
     """
     Acepta una o varias imágenes (páginas) de UN MISMO comprobante.
     Si se envía más de un archivo, Gemini analiza todas las páginas
     en una sola pasada y arma UN solo resultado combinado (útil cuando
     la factura no entra completa en una sola foto).
+
+    El parámetro "modo" evita que Gemini pierda tiempo buscando ítems,
+    RUC, IVA, etc. cuando el usuario ya sabe que NO es una factura:
+      - "factura": fuerza el análisis como comprobante de compra (CASO A directo)
+      - "otro": fuerza transcripción simple, sin buscar estructura de factura (CASO B directo)
+      - "auto" (por defecto): deja que Gemini decida entre A y B
     """
     if not api_key_servidor:
         raise HTTPException(status_code=500, detail="API Key de Gemini no configurada en el servidor.")
@@ -56,9 +62,47 @@ async def procesar_factura(files: List[UploadFile] = File(...)):
         url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={api_key_servidor}"
 
         multipagina = len(files) > 1
+        intro_imagenes = "las siguientes imágenes, que son MÚLTIPLES PARTES/PÁGINAS de UN MISMO comprobante" if multipagina else "esta imagen"
+        instr_combinar = "Combina la información de todas las imágenes en un único resultado (por ejemplo, si el encabezado está en una foto y el detalle de ítems continúa en otra, unificá todo en una sola lista de items y un solo total)." if multipagina else ""
 
-        prompt = f"""Analiza {"las siguientes imágenes, que son MÚLTIPLES PARTES/PÁGINAS de UN MISMO comprobante" if multipagina else "esta imagen"} y responde SOLO con un JSON puro (sin texto adicional ni markdown).
-{"Combina la información de todas las imágenes en un único resultado (por ejemplo, si el encabezado está en una foto y el detalle de ítems continúa en otra, unificá todo en una sola lista de items y un solo total)." if multipagina else ""}
+        if modo == "otro":
+            # El usuario ya indicó que NO es una factura: se pide transcripción directa,
+            # sin pedirle al modelo que busque RUC, ítems, IVA, etc. -> respuesta más rápida.
+            prompt = f"""Analiza {intro_imagenes} y responde SOLO con un JSON puro (sin texto adicional ni markdown), con este formato exacto:
+{{
+    "es_factura": false,
+    "tipo_documento": "que tipo de documento o imagen parece ser (arqueo de caja, recibo, nota, planilla, etc.)",
+    "texto_detectado": "transcripcion completa y ordenada de todo el texto legible, seguida de una breve descripcion de lo que se ve"
+}}
+No analices ítems de factura, RUC, IVA ni totales de comprobante: es solo transcripción y descripción del documento."""
+        elif modo == "factura":
+            # El usuario ya indicó que SÍ es una factura: se salta el paso de clasificación.
+            prompt = f"""Analiza {intro_imagenes}, que es una FACTURA o comprobante de compra de Paraguay, y responde SOLO con un JSON puro (sin texto adicional ni markdown), con este formato exacto:
+{{
+    "es_factura": true,
+    "ruc": "sin dv",
+    "emisor": "razon social",
+    "fecha": "YYYY-MM-DD",
+    "timbrado": "numero",
+    "nro_factura": "000-000-0000000",
+    "items": [
+        {{
+            "cantidad": 1,
+            "descripcion": "detalle del producto o servicio",
+            "unidad_medida": "litro, kg, unidad, etc.",
+            "precio_unitario": 0,
+            "total_item": 0,
+            "iva": "10%, 5% o EXENTA"
+        }}
+    ],
+    "total": 0,
+    "condicion": "CONTADO o CREDITO"
+}}
+{instr_combinar}"""
+        else:
+            # modo "auto": comportamiento original, dejando que Gemini decida.
+            prompt = f"""Analiza {intro_imagenes} y responde SOLO con un JSON puro (sin texto adicional ni markdown).
+{instr_combinar}
 
 PASO 1: Determina si la imagen (o conjunto de imágenes) es una factura o comprobante de compra de Paraguay.
 

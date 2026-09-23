@@ -512,12 +512,12 @@
 
             prompt.style.display = 'none';
             loader.style.display = 'block';
-            // Reinicia el GIF desde el primer frame en cada lectura
+            // Reinicia el GIF desde el primer frame (sin vaciar el src, que en un <img>
+            // provoca que el navegador intente recargar la página actual)
             const loaderGif = document.getElementById('loaderGif');
             if (loaderGif) {
-                const srcActual = loaderGif.src;
-                loaderGif.src = '';
-                loaderGif.src = srcActual;
+                const base = loaderGif.src.split('#')[0];
+                loaderGif.src = base + '#r' + Date.now();
             }
             loadingText.style.display = 'block';
             const textoBase = tipoSeleccionado === 'otro' ? 'Leyendo documento...' : 'Analizando mercaderías...';

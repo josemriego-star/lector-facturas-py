@@ -142,6 +142,25 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        @keyframes sacudir-despertador {
+            0%, 100% { transform: rotate(0deg); }
+            10% { transform: rotate(-18deg); }
+            20% { transform: rotate(15deg); }
+            30% { transform: rotate(-15deg); }
+            40% { transform: rotate(12deg); }
+            50% { transform: rotate(-10deg); }
+            60% { transform: rotate(8deg); }
+            70% { transform: rotate(-6deg); }
+            80% { transform: rotate(4deg); }
+            90% { transform: rotate(-2deg); }
+        }
+        .despertador-icono {
+            display: none;
+            font-size: 26px;
+            text-align: center;
+            margin: 6px 0 2px 0;
+            animation: sacudir-despertador 0.9s ease-in-out infinite;
+        }
         .invoice-card {
             background-color: white;
             border-radius: 16px;
@@ -360,6 +379,7 @@
                 <p class="upload-desc">Formatos JPG o PNG automáticos</p>
             </div>
             <div id="loader" class="loader"></div>
+            <div id="despertadorIcono" class="despertador-icono">⏰</div>
             <p id="loadingText" class="upload-desc" style="display:none; color:#004a99; font-weight:600; margin-top:10px;">Analizando mercaderías con Gemini...</p>
         </div>
 
@@ -511,6 +531,17 @@
             input.value = '';
         }
 
+        // Tiempo máximo que esperamos por intento (el server "dormido" en Render puede
+        // tardar hasta ~60s en despertar + tiempo de análisis de Gemini).
+        const TIMEOUT_MS = 75000;
+
+        function fetchConTimeout(url, opciones, timeoutMs) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            return fetch(url, { ...opciones, signal: controller.signal })
+                .finally(() => clearTimeout(timeoutId));
+        }
+
         async function enviarAlBackend(archivos) {
             const prompt = document.getElementById('uploadPrompt');
             const loader = document.getElementById('loader');
@@ -519,21 +550,37 @@
             prompt.style.display = 'none';
             loader.style.display = 'block';
             loadingText.style.display = 'block';
+
             const textoBase = tipoSeleccionado === 'otro' ? 'Leyendo documento...' : 'Analizando mercaderías...';
-            loadingText.textContent = archivos.length > 1
+            const textoNormal = archivos.length > 1
                 ? `Analizando ${archivos.length} páginas...`
                 : textoBase;
+            loadingText.textContent = textoNormal;
+
+            // Si a los 6 segundos seguimos esperando, probablemente el servidor
+            // estaba dormido y se está despertando: avisamos al usuario.
+            const despertadorIcono = document.getElementById('despertadorIcono');
+            const avisoDespertar = setTimeout(() => {
+                loadingText.textContent = 'Despertando el servidor, puede tardar hasta 1 minuto la primera vez...';
+                despertadorIcono.style.display = 'block';
+            }, 6000);
 
             const formData = new FormData();
             archivos.forEach(f => formData.append('files', f));
             formData.append('modo', tipoSeleccionado);
 
+            const opciones = { method: 'POST', mode: 'cors', body: formData };
+
+            let response;
             try {
-                const response = await fetch(API_URL + "/procesar", {
-                    method: 'POST',
-                    mode: 'cors',
-                    body: formData
-                });
+                try {
+                    response = await fetchConTimeout(API_URL + "/procesar", opciones, TIMEOUT_MS);
+                } catch (primerError) {
+                    // Reintento automático: si fue timeout/abort o error de red,
+                    // probablemente el servidor recién terminó de despertar.
+                    loadingText.textContent = 'Reintentando, el servidor está iniciando...';
+                    response = await fetchConTimeout(API_URL + "/procesar", opciones, TIMEOUT_MS);
+                }
 
                 if (!response.ok) {
                     const errData = await response.text();
@@ -555,8 +602,13 @@
                 }
 
             } catch (error) {
-                alert('Fallo en el procesamiento: ' + error.message);
+                const mensaje = error.name === 'AbortError'
+                    ? 'El servidor tardó demasiado en responder (puede estar iniciando). Probá de nuevo en unos segundos.'
+                    : error.message;
+                alert('Fallo en el procesamiento: ' + mensaje);
             } finally {
+                clearTimeout(avisoDespertar);
+                despertadorIcono.style.display = 'none';
                 prompt.style.display = 'block';
                 loader.style.display = 'none';
                 loadingText.style.display = 'none';

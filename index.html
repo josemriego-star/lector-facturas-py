@@ -342,6 +342,33 @@
         .modal-content .item-total { font-size: 15px; }
         .modal-content .no-factura-box { font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
         .modal-content .total-amount { font-size: 20px; }
+        .tipo-toggle button.activo.tipo-formulario { background-color: #e3f5ea; color: #107c41; }
+        .btn-excel-form { background-color: #0a6a5c; box-shadow: 0 4px 10px rgba(10,106,92,0.2); }
+        .btn-excel-form:hover { background-color: #07493f; }
+        .paginas-panel {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background-color: #fff7e0;
+            border: 1px solid #f0d98c;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #8a6500;
+        }
+        .paginas-panel button { border: none; border-radius: 8px; padding: 8px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-analizar { background-color: #004a99; color: white; }
+        .btn-descartar { background-color: #fdeaea; color: #c0392b; }
+        .prep-box { background-color: #f8fafc; border-radius: 10px; padding: 10px; margin-top: 10px; }
+        .prep-title { font-size: 13px; font-weight: 700; color: #107c41; margin: 0 0 4px 0; }
+        .edit-ing-grid { display: grid; grid-template-columns: 1.6fr 0.7fr 0.8fr 1fr; gap: 4px; padding: 4px 0; }
+        .edit-ing-grid .edit-input { font-size: 11px; padding: 4px; }
+        .fila-flex { display: flex; gap: 6px; margin-bottom: 6px; }
+        .fila-flex > div { flex: 1; }
+        .lbl-mini { font-size: 10px; color: #999; display: block; }
     </style>
 </head>
 <body>
@@ -367,16 +394,17 @@
 
     <main>
         <div class="tipo-toggle">
-            <button type="button" id="btnTipoFactura" class="activo tipo-factura" onclick="fijarTipo('factura')">🧾 Es una factura</button>
-            <button type="button" id="btnTipoOtro" class="tipo-otro" onclick="fijarTipo('otro')">📄 Otro documento</button>
+            <button type="button" id="btnTipoFactura" class="activo tipo-factura" onclick="fijarTipo('factura')">🧾 Factura / ticket</button>
+            <button type="button" id="btnTipoFormulario" class="tipo-formulario" onclick="fijarTipo('formulario')">📋 Formulario</button>
+            <button type="button" id="btnTipoOtro" class="tipo-otro" onclick="fijarTipo('otro')">📄 Otro</button>
         </div>
 
         <div class="upload-card">
-            <input type="file" id="fileInput" accept="image/*" onchange="procesarArchivo()">
+            <input type="file" id="fileInput" accept="image/*" multiple onchange="procesarArchivo()">
             <div id="uploadPrompt">
                 <div class="upload-icon">📸</div>
-                <p class="upload-title">Subir o Capturar Factura</p>
-                <p class="upload-desc">Formatos JPG o PNG automáticos</p>
+                <p class="upload-title">Subir o Capturar Fotos</p>
+                <p class="upload-desc">Podés elegir varias fotos a la vez</p>
             </div>
             <div id="loader" class="loader"></div>
             <div id="despertadorIcono" class="despertador-icono">⏰</div>
@@ -386,12 +414,24 @@
         <div class="multipage-hint">
             <label>
                 <input type="checkbox" id="chkMultipagina" onchange="toggleMultipagina()">
-                La factura no entra en una sola foto (varias páginas)
+                Las fotos son páginas de UN MISMO comprobante
             </label>
+        </div>
+
+        <div class="paginas-panel" id="panelPaginas">
+            <span id="paginasContador"></span>
+            <span>
+                <button type="button" class="btn-analizar" onclick="analizarPaginasPendientes()">🔍 Analizar</button>
+                <button type="button" class="btn-descartar" onclick="descartarPaginas()">Descartar</button>
+            </span>
         </div>
 
         <button id="btnExcel" class="btn-excel" onclick="descargarExcelCompleto()">
             📥 Descargar Reporte Excel (.xlsx)
+        </button>
+
+        <button id="btnExcelFormulario" class="btn-excel btn-excel-form" onclick="descargarExcelFormularios()">
+            📥 Descargar Formulario en Excel (.xlsx)
         </button>
 
         <div id="resultadosContainer"></div>
@@ -409,11 +449,14 @@
         let todasLasFacturas = []; // [{id, data}] — lo que se procesó en esta sesión (para exportar a Excel)
         let todosLosDocumentos = []; // [{id, data}] — lecturas que NO son factura (para editar/descargar/borrar)
         let paginasPendientes = []; // páginas acumuladas cuando está activo el modo "multipágina"
-        let tipoSeleccionado = 'factura'; // 'factura' | 'otro' — para no hacerle buscar ítems a Gemini si no corresponde
+        let todosLosFormularios = []; // [{id, data}] — formularios de producción leídos (para editar/exportar)
+        let tipoSeleccionado = 'factura'; // 'factura' | 'formulario' | 'otro' — para no hacerle buscar cosas innecesarias a Gemini
+        let procesando = false; // evita lanzar dos lecturas a la vez
 
         function fijarTipo(tipo) {
             tipoSeleccionado = tipo;
             document.getElementById('btnTipoFactura').classList.toggle('activo', tipo === 'factura');
+            document.getElementById('btnTipoFormulario').classList.toggle('activo', tipo === 'formulario');
             document.getElementById('btnTipoOtro').classList.toggle('activo', tipo === 'otro');
         }
 
@@ -459,6 +502,14 @@
             }
             cont.innerHTML = historial.map(h => {
                 const d = h.data;
+                if (d.es_formulario) {
+                    return `<div class="history-item">
+                        <div>
+                            <div class="hi-name">📋 Formulario de producción • ${esc(d.responsable || 'S/R')}</div>
+                            <div class="hi-meta">${esc(formatoFechaCorta(d.fecha))} • ${h.fecha_registro}</div>
+                        </div>
+                    </div>`;
+                }
                 if (d.es_factura === false) {
                     return `<div class="history-item">
                         <div>
@@ -481,9 +532,11 @@
         function volverInicio() {
             todasLasFacturas = [];
             todosLosDocumentos = [];
+            todosLosFormularios = [];
             paginasPendientes = [];
             document.getElementById('resultadosContainer').innerHTML = '';
             document.getElementById('btnExcel').style.display = 'none';
+            document.getElementById('btnExcelFormulario').style.display = 'none';
             document.getElementById('chkMultipagina').checked = false;
             actualizarHintMultipagina();
             fijarTipo('factura');
@@ -492,19 +545,48 @@
             input.value = '';
         }
 
-        function toggleMultipagina() {
-            paginasPendientes = [];
-            actualizarHintMultipagina();
-        }
+        const DESC_NORMAL = 'Podés elegir varias fotos a la vez';
 
         function actualizarHintMultipagina() {
             const activo = document.getElementById('chkMultipagina').checked;
             const desc = document.getElementById('uploadPrompt').querySelector('.upload-desc');
-            if (activo) {
-                desc.textContent = `Modo varias páginas activo — páginas capturadas: ${paginasPendientes.length}. Sacá todas las fotos y luego desactivá la casilla para analizarlas juntas.`;
+            desc.textContent = activo
+                ? 'Modo varias páginas: sacá o elegí todas las fotos del mismo comprobante.'
+                : DESC_NORMAL;
+
+            const panel = document.getElementById('panelPaginas');
+            if (paginasPendientes.length > 0) {
+                panel.style.display = 'flex';
+                document.getElementById('paginasContador').textContent = `📄 ${paginasPendientes.length} página(s) lista(s)`;
             } else {
-                desc.textContent = 'Formatos JPG o PNG automáticos';
+                panel.style.display = 'none';
             }
+        }
+
+        // Al DESMARCAR la casilla con páginas acumuladas, se analizan juntas.
+        // (Antes se borraban las páginas al tocar la casilla y nunca se enviaban.)
+        function toggleMultipagina() {
+            const activo = document.getElementById('chkMultipagina').checked;
+            if (!activo && paginasPendientes.length > 0) {
+                analizarPaginasPendientes();
+                return;
+            }
+            actualizarHintMultipagina();
+        }
+
+        async function analizarPaginasPendientes() {
+            if (procesando || paginasPendientes.length === 0) return;
+            const paginas = [...paginasPendientes];
+            paginasPendientes = [];
+            document.getElementById('chkMultipagina').checked = false;
+            actualizarHintMultipagina();
+            await procesarLotes([paginas]);
+        }
+
+        function descartarPaginas() {
+            paginasPendientes = [];
+            document.getElementById('chkMultipagina').checked = false;
+            actualizarHintMultipagina();
         }
 
         // ---------- Captura / Procesamiento ----------
@@ -512,23 +594,18 @@
             const input = document.getElementById('fileInput');
             if (!input.files || input.files.length === 0) return;
 
-            const modoMultipagina = document.getElementById('chkMultipagina').checked;
+            const archivos = Array.from(input.files); // copiamos antes de limpiar el input
+            input.value = '';
 
-            if (modoMultipagina) {
-                // Acumular la foto como una página más, sin llamar todavía al backend
-                paginasPendientes.push(input.files[0]);
+            if (document.getElementById('chkMultipagina').checked) {
+                // Modo páginas: se acumulan; se analizan juntas como UN comprobante
+                paginasPendientes.push(...archivos);
                 actualizarHintMultipagina();
-                input.value = '';
                 return;
             }
 
-            const archivos = paginasPendientes.length > 0
-                ? [...paginasPendientes, input.files[0]]
-                : [input.files[0]];
-
-            await enviarAlBackend(archivos);
-            paginasPendientes = [];
-            input.value = '';
+            // Modo normal: cada foto seleccionada es un comprobante distinto, se leen una tras otra
+            await procesarLotes(archivos.map(f => [f]));
         }
 
         // Tiempo máximo que esperamos por intento (el server "dormido" en Render puede
@@ -542,78 +619,108 @@
                 .finally(() => clearTimeout(timeoutId));
         }
 
-        async function enviarAlBackend(archivos) {
-            const prompt = document.getElementById('uploadPrompt');
-            const loader = document.getElementById('loader');
+        function mensajeError(error) {
+            return error.name === 'AbortError'
+                ? 'El servidor tardó demasiado en responder (puede estar iniciando). Probá de nuevo en unos segundos.'
+                : error.message;
+        }
+
+        // Lee UN comprobante (una o varias páginas) y devuelve el JSON del backend
+        async function leerComprobante(archivos, modo, esPrimero, prefijo) {
             const loadingText = document.getElementById('loadingText');
-
-            prompt.style.display = 'none';
-            loader.style.display = 'block';
-            loadingText.style.display = 'block';
-
-            const textoBase = tipoSeleccionado === 'otro' ? 'Leyendo documento...' : 'Analizando mercaderías...';
-            const textoNormal = archivos.length > 1
-                ? `Analizando ${archivos.length} páginas...`
-                : textoBase;
-            loadingText.textContent = textoNormal;
-
-            // Si a los 6 segundos seguimos esperando, probablemente el servidor
-            // estaba dormido y se está despertando: avisamos al usuario.
             const despertadorIcono = document.getElementById('despertadorIcono');
-            const avisoDespertar = setTimeout(() => {
-                loadingText.textContent = 'Despertando el servidor, puede tardar hasta 1 minuto la primera vez...';
+
+            const textoBase = modo === 'otro' ? 'Leyendo documento...'
+                : modo === 'formulario' ? 'Leyendo formulario...'
+                : 'Analizando mercaderías...';
+            loadingText.textContent = prefijo + (archivos.length > 1 ? `Analizando ${archivos.length} páginas...` : textoBase);
+
+            // Si a los 6 segundos de la PRIMERA lectura seguimos esperando, probablemente
+            // el servidor estaba dormido y se está despertando: avisamos al usuario.
+            const avisoDespertar = esPrimero ? setTimeout(() => {
+                loadingText.textContent = prefijo + 'Despertando el servidor, puede tardar hasta 1 minuto la primera vez...';
                 despertadorIcono.style.display = 'block';
-            }, 6000);
+            }, 6000) : null;
 
             const formData = new FormData();
             archivos.forEach(f => formData.append('files', f));
-            formData.append('modo', tipoSeleccionado);
-
+            formData.append('modo', modo);
             const opciones = { method: 'POST', mode: 'cors', body: formData };
 
-            let response;
             try {
+                let response;
                 try {
                     response = await fetchConTimeout(API_URL + "/procesar", opciones, TIMEOUT_MS);
                 } catch (primerError) {
                     // Reintento automático: si fue timeout/abort o error de red,
                     // probablemente el servidor recién terminó de despertar.
-                    loadingText.textContent = 'Reintentando, el servidor está iniciando...';
+                    loadingText.textContent = prefijo + 'Reintentando, el servidor está iniciando...';
                     response = await fetchConTimeout(API_URL + "/procesar", opciones, TIMEOUT_MS);
                 }
-
                 if (!response.ok) {
                     const errData = await response.text();
                     throw new Error('Servidor error: ' + errData);
                 }
-
-                const data = await response.json();
-                guardarEnHistorial(data);
-
-                if (data.es_factura === false) {
-                    const id = 'd_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-                    todosLosDocumentos.push({ id, data });
-                    renderTarjetaNoFactura(id, data);
-                } else {
-                    const id = 'f_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-                    todasLasFacturas.push({ id, data });
-                    document.getElementById('btnExcel').style.display = 'block';
-                    renderTarjetaFactura(id, data);
-                }
-
-            } catch (error) {
-                const mensaje = error.name === 'AbortError'
-                    ? 'El servidor tardó demasiado en responder (puede estar iniciando). Probá de nuevo en unos segundos.'
-                    : error.message;
-                alert('Fallo en el procesamiento: ' + mensaje);
+                return await response.json();
             } finally {
-                clearTimeout(avisoDespertar);
+                if (avisoDespertar) clearTimeout(avisoDespertar);
                 despertadorIcono.style.display = 'none';
+            }
+        }
+
+        function registrarResultado(data) {
+            guardarEnHistorial(data);
+            if (data.es_formulario) {
+                const id = 'p_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                todosLosFormularios.push({ id, data });
+                document.getElementById('btnExcelFormulario').style.display = 'block';
+                renderTarjetaFormulario(id, data);
+            } else if (data.es_factura === false) {
+                const id = 'd_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                todosLosDocumentos.push({ id, data });
+                renderTarjetaNoFactura(id, data);
+            } else {
+                const id = 'f_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                todasLasFacturas.push({ id, data });
+                document.getElementById('btnExcel').style.display = 'block';
+                renderTarjetaFactura(id, data);
+            }
+        }
+
+        // lotes = lista de comprobantes; cada comprobante es una lista de archivos (páginas)
+        async function procesarLotes(lotes) {
+            if (procesando || lotes.length === 0) return;
+            procesando = true;
+            const modo = tipoSeleccionado;
+
+            const prompt = document.getElementById('uploadPrompt');
+            const loader = document.getElementById('loader');
+            const loadingText = document.getElementById('loadingText');
+            prompt.style.display = 'none';
+            loader.style.display = 'block';
+            loadingText.style.display = 'block';
+
+            const errores = [];
+            try {
+                for (let i = 0; i < lotes.length; i++) {
+                    const prefijo = lotes.length > 1 ? `(${i + 1} de ${lotes.length}) ` : '';
+                    try {
+                        const data = await leerComprobante(lotes[i], modo, i === 0, prefijo);
+                        registrarResultado(data);
+                    } catch (error) {
+                        errores.push((lotes.length > 1 ? `Foto ${i + 1}: ` : '') + mensajeError(error));
+                    }
+                }
+            } finally {
                 prompt.style.display = 'block';
                 loader.style.display = 'none';
                 loadingText.style.display = 'none';
-                document.getElementById('chkMultipagina').checked = false;
+                procesando = false;
                 actualizarHintMultipagina();
+            }
+
+            if (errores.length > 0) {
+                alert('Fallo en el procesamiento:\n' + errores.join('\n'));
             }
         }
 
@@ -796,7 +903,7 @@
                 <div class="invoice-card clickable" id="card-${id}" onclick="abrirModalFactura('${id}')">
                     <div class="invoice-header">
                         <div>
-                            <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span>
+                            <span class="invoice-condicion">${data.condicion || 'CONTADO'}</span>${data.tipo_comprobante === 'TICKET' ? '<span class="invoice-condicion" style="background-color:#e3f5ea; color:#107c41; margin-left:4px;">TICKET</span>' : ''}
                             <h3 class="invoice-emisor">${data.emisor || 'Emisor'}</h3>
                             <p class="invoice-meta">RUC: ${data.ruc || 'S/R'} • Fac: ${data.nro_factura || 'S/N'}</p>
                         </div>
@@ -932,6 +1039,228 @@
             if (card) card.remove();
             if (todasLasFacturas.length === 0) {
                 document.getElementById('btnExcel').style.display = 'none';
+            }
+        }
+
+        // ---------- Formularios de producción ----------
+        const UNIDADES_FORM = ['gr', 'kg', 'lt', 'ml', 'un', 'mazo'];
+        const LUGARES_FORM = ['Brasur', 'Coresa', 'AS', 'Cantina', 'Otro'];
+
+        function esc(valor) {
+            return String(valor ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function formatoFechaCorta(f) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(f || '');
+            return m ? `${m[3]}/${m[2]}/${m[1]}` : (f || '--/--/----');
+        }
+
+        function htmlCuerpoFormulario(d) {
+            const lugar = (d.lugar === 'Otro' && d.lugar_otro) ? `Otro: ${d.lugar_otro}` : (d.lugar || '—');
+            let h = `<p class="invoice-meta">📅 ${esc(formatoFechaCorta(d.fecha))} • 👩‍🍳 ${esc(d.responsable || '—')}</p>
+                     <p class="invoice-meta">📍 ${esc(lugar)} • Hoja ${esc(d.hoja || '?')} de ${esc(d.hoja_total || '?')}</p>`;
+            (d.preparaciones || []).forEach((p, i) => {
+                h += `<div class="prep-box">
+                        <p class="prep-title">Preparación ${esc(p.numero ?? (i + 1))}: ${esc(p.nombre || '(sin nombre)')}</p>
+                        <p class="item-sub">Producidas: ${esc(p.porciones_producidas ?? '—')} • Vendidas: ${esc(p.porciones_vendidas ?? '—')} • Precio: ${esc(p.precio_venta ?? '—')}</p>`;
+                (p.ingredientes || []).forEach(ing => {
+                    h += `<div class="item-row">
+                            <div>
+                                <p class="item-desc">${esc(ing.ingrediente)}</p>
+                                ${ing.observacion ? `<p class="item-sub">${esc(ing.observacion)}</p>` : ''}
+                            </div>
+                            <p class="item-total">${esc(ing.cantidad)} ${esc(ing.unidad)}</p>
+                        </div>`;
+                });
+                if (p.hueso_g || p.grasa_g || p.sobro) {
+                    h += `<p class="item-sub" style="margin-top:6px;">Hueso: ${esc(p.hueso_g ?? '—')} g • Grasa: ${esc(p.grasa_g ?? '—')} g • Sobró: ${esc(p.sobro || '—')}</p>`;
+                }
+                h += `</div>`;
+            });
+            return h;
+        }
+
+        function vistaFormulario(id, data) {
+            return `
+                <div class="invoice-card clickable" id="card-${id}" style="border-left-color:#107c41;" onclick="abrirModalFormulario('${id}')">
+                    <div class="invoice-header">
+                        <div>
+                            <span class="invoice-condicion" style="background-color:#e3f5ea; color:#107c41;">FORMULARIO DE PRODUCCIÓN</span>
+                            <h3 class="invoice-emisor">Registro de producción diaria</h3>
+                        </div>
+                    </div>
+                    ${htmlCuerpoFormulario(data)}
+                    <div class="card-actions">
+                        <button class="btn-editar" onclick="event.stopPropagation(); activarEdicionFormulario('${id}')">✏️ Editar</button>
+                        <button class="btn-borrar" onclick="event.stopPropagation(); borrarFormulario('${id}')">🗑️ Borrar</button>
+                    </div>
+                </div>`;
+        }
+
+        function renderTarjetaFormulario(id, data) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaFormulario(id, data);
+            document.getElementById('resultadosContainer').insertAdjacentElement('afterbegin', wrapper.firstElementChild);
+        }
+
+        function abrirModalFormulario(id) {
+            const item = todosLosFormularios.find(f => f.id === id);
+            if (!item) return;
+            document.getElementById('modalBody').innerHTML = `
+                <span class="invoice-condicion" style="background-color:#e3f5ea; color:#107c41;">FORMULARIO DE PRODUCCIÓN</span>
+                <h3 class="invoice-emisor" style="margin-top:6px;">Registro de producción diaria</h3>
+                ${htmlCuerpoFormulario(item.data)}`;
+            document.getElementById('modalOverlay').classList.add('abierto');
+        }
+
+        function vistaEdicionFormulario(id, d) {
+            const optsLugar = LUGARES_FORM.map(l => `<option value="${l}" ${d.lugar === l ? 'selected' : ''}>${l}</option>`).join('');
+            let h = `<div class="invoice-card" id="card-${id}" style="border-left-color:#107c41;">
+                <div class="fila-flex">
+                    <div><label class="lbl-mini">Fecha (AAAA-MM-DD)</label><input class="edit-input f-fecha" value="${esc(d.fecha)}"></div>
+                    <div><label class="lbl-mini">Cocinera / responsable</label><input class="edit-input f-resp" value="${esc(d.responsable)}"></div>
+                </div>
+                <div class="fila-flex">
+                    <div><label class="lbl-mini">Lugar</label><select class="edit-input f-lugar"><option value=""></option>${optsLugar}</select></div>
+                    <div><label class="lbl-mini">Otro (texto)</label><input class="edit-input f-lugarotro" value="${esc(d.lugar_otro)}"></div>
+                    <div><label class="lbl-mini">Hoja</label><input class="edit-input f-hoja" value="${esc(d.hoja)}"></div>
+                    <div><label class="lbl-mini">de</label><input class="edit-input f-hojatotal" value="${esc(d.hoja_total)}"></div>
+                </div>`;
+            (d.preparaciones || []).forEach((p, pi) => {
+                h += `<div class="prep-box" data-p="${pi}">
+                    <label class="lbl-mini">Preparación ${esc(p.numero ?? (pi + 1))} — nombre</label>
+                    <input class="edit-input p-nombre" value="${esc(p.nombre)}" style="margin-bottom:6px;">
+                    <div class="fila-flex">
+                        <div><label class="lbl-mini">Porc. producidas</label><input class="edit-input p-prod" value="${esc(p.porciones_producidas)}"></div>
+                        <div><label class="lbl-mini">Porc. vendidas</label><input class="edit-input p-vend" value="${esc(p.porciones_vendidas)}"></div>
+                        <div><label class="lbl-mini">Precio por porción</label><input class="edit-input p-precio" value="${esc(p.precio_venta)}"></div>
+                    </div>
+                    <div class="edit-ing-grid" style="font-size:9px; color:#999;"><span>Ingrediente</span><span>Cant.</span><span>Unidad</span><span>Observación</span></div>`;
+                (p.ingredientes || []).forEach(ing => {
+                    const optsU = UNIDADES_FORM.map(u => `<option value="${u}" ${ing.unidad === u ? 'selected' : ''}>${u}</option>`).join('');
+                    h += `<div class="edit-ing-grid i-fila">
+                        <input class="edit-input i-nombre" value="${esc(ing.ingrediente)}">
+                        <input class="edit-input i-cant" inputmode="decimal" value="${esc(ing.cantidad)}">
+                        <select class="edit-input i-unidad"><option value=""></option>${optsU}</select>
+                        <input class="edit-input i-obs" value="${esc(ing.observacion)}">
+                    </div>`;
+                });
+                h += `<div class="fila-flex" style="margin-top:6px;">
+                        <div><label class="lbl-mini">Hueso (g)</label><input class="edit-input p-hueso" value="${esc(p.hueso_g)}"></div>
+                        <div><label class="lbl-mini">Grasa (g)</label><input class="edit-input p-grasa" value="${esc(p.grasa_g)}"></div>
+                        <div style="flex:2;"><label class="lbl-mini">Sobró</label><input class="edit-input p-sobro" value="${esc(p.sobro)}"></div>
+                    </div>
+                </div>`;
+            });
+            h += `<div class="card-actions">
+                    <button class="btn-guardar" onclick="guardarEdicionFormulario('${id}')">💾 Guardar</button>
+                    <button class="btn-borrar" onclick="cancelarEdicionFormulario('${id}')">✖️ Cancelar</button>
+                </div></div>`;
+            return h;
+        }
+
+        function activarEdicionFormulario(id) {
+            const item = todosLosFormularios.find(f => f.id === id);
+            if (!item) return;
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaEdicionFormulario(id, item.data);
+            document.getElementById(`card-${id}`).replaceWith(wrapper.firstElementChild);
+            // Los selects se completan por JS para evitar problemas con valores no estándar
+            const card = document.getElementById(`card-${id}`);
+            const d = item.data;
+            card.querySelector('.f-lugar').value = LUGARES_FORM.includes(d.lugar) ? d.lugar : '';
+            card.querySelectorAll('.prep-box').forEach(box => {
+                const p = d.preparaciones[Number(box.dataset.p)];
+                box.querySelectorAll('.i-fila').forEach((fila, i) => {
+                    const u = p.ingredientes[i].unidad;
+                    fila.querySelector('.i-unidad').value = UNIDADES_FORM.includes(u) ? u : '';
+                });
+            });
+        }
+
+        function cancelarEdicionFormulario(id) {
+            const item = todosLosFormularios.find(f => f.id === id);
+            if (!item) return;
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaFormulario(id, item.data);
+            document.getElementById(`card-${id}`).replaceWith(wrapper.firstElementChild);
+        }
+
+        function guardarEdicionFormulario(id) {
+            const item = todosLosFormularios.find(f => f.id === id);
+            if (!item) return;
+            const card = document.getElementById(`card-${id}`);
+            const numTxt = v => {
+                const t = String(v).trim();
+                if (t === '') return '';
+                const n = parseFloat(t.replace(',', '.'));
+                return isNaN(n) ? t : n;
+            };
+            const preparaciones = Array.from(card.querySelectorAll('.prep-box')).map(box => {
+                const original = item.data.preparaciones[Number(box.dataset.p)];
+                return {
+                    ...original,
+                    nombre: box.querySelector('.p-nombre').value,
+                    porciones_producidas: numTxt(box.querySelector('.p-prod').value),
+                    porciones_vendidas: numTxt(box.querySelector('.p-vend').value),
+                    precio_venta: numTxt(box.querySelector('.p-precio').value),
+                    hueso_g: numTxt(box.querySelector('.p-hueso').value),
+                    grasa_g: numTxt(box.querySelector('.p-grasa').value),
+                    sobro: box.querySelector('.p-sobro').value,
+                    ingredientes: Array.from(box.querySelectorAll('.i-fila')).map((fila, i) => ({
+                        ...original.ingredientes[i],
+                        ingrediente: fila.querySelector('.i-nombre').value,
+                        cantidad: numTxt(fila.querySelector('.i-cant').value),
+                        unidad: fila.querySelector('.i-unidad').value,
+                        observacion: fila.querySelector('.i-obs').value
+                    }))
+                };
+            });
+            item.data = {
+                ...item.data,
+                fecha: card.querySelector('.f-fecha').value.trim(),
+                responsable: card.querySelector('.f-resp').value,
+                lugar: card.querySelector('.f-lugar').value,
+                lugar_otro: card.querySelector('.f-lugarotro').value,
+                hoja: card.querySelector('.f-hoja').value,
+                hoja_total: card.querySelector('.f-hojatotal').value,
+                preparaciones
+            };
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = vistaFormulario(id, item.data);
+            card.replaceWith(wrapper.firstElementChild);
+        }
+
+        function borrarFormulario(id) {
+            if (!confirm('¿Quitar este formulario de la lista a exportar?')) return;
+            todosLosFormularios = todosLosFormularios.filter(f => f.id !== id);
+            const card = document.getElementById(`card-${id}`);
+            if (card) card.remove();
+            if (todosLosFormularios.length === 0) {
+                document.getElementById('btnExcelFormulario').style.display = 'none';
+            }
+        }
+
+        async function descargarExcelFormularios() {
+            if (todosLosFormularios.length === 0) return;
+            try {
+                const response = await fetch(API_URL + "/exportar-formulario", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(todosLosFormularios.map(f => f.data))
+                });
+                if (!response.ok) throw new Error(await response.text());
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "formulario_produccion.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                alert("Error al descargar Excel del formulario: " + error.message);
             }
         }
 

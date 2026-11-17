@@ -3,6 +3,8 @@ import os
 import re
 import requests
 import json
+from copy import copy
+from datetime import date
 from io import BytesIO
 from typing import List, Any
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
@@ -436,24 +438,61 @@ def llenar_formulario(ws, d: dict):
             )
 
 
+# Planilla Excel "Muestra_Produccion": una tabla plana (una fila por ingrediente) con las columnas
+# Fecha | Preparación | Ingrediente | Cantidad usada | Unidad. Debe estar junto a main.py en el repositorio.
+PLANTILLA_PRODUCCION = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Muestra_Produccion.xlsx")
+
+
+def fecha_a_date(f):
+    """'YYYY-MM-DD' -> date (para que Excel aplique el formato dd/mm/yyyy); si no se puede, devuelve el texto."""
+    s = str(f or "").strip()
+    m = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})$", s)
+    if m:
+        try:
+            return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            pass
+    return s or None
+
+
 @app.post("/exportar-formulario")
 async def exportar_formulario(datos_formularios: List[Any]):
-    """Recibe los formularios leídos y devuelve un Excel con una hoja por formulario,
-    copiando la planilla original (mismo diseño, celdas combinadas y formato)."""
+    """Recibe los formularios leídos y los transcribe en el Excel Muestra_Produccion:
+    una fila por ingrediente, a partir de la fila 2, respetando el formato de la muestra."""
     try:
         formularios = [f for f in datos_formularios if isinstance(f, dict) and f.get("es_formulario")]
         if not formularios:
             raise HTTPException(status_code=400, detail="No hay formularios para exportar.")
-        if not os.path.exists(PLANTILLA_FORMULARIO):
-            raise HTTPException(status_code=500, detail="Falta el archivo plantilla_formulario.xlsx en el servidor.")
+        if not os.path.exists(PLANTILLA_PRODUCCION):
+            raise HTTPException(status_code=500, detail="Falta el archivo Muestra_Produccion.xlsx en el servidor.")
 
-        wb = load_workbook(PLANTILLA_FORMULARIO)
-        base = wb.active
-        # Primero se copian las hojas vacías y recién después se llenan
-        hojas = [base] + [wb.copy_worksheet(base) for _ in formularios[1:]]
-        for i, (ws, datos) in enumerate(zip(hojas, formularios), 1):
-            ws.title = f"Hoja {i}"
-            llenar_formulario(ws, datos)
+        wb = load_workbook(PLANTILLA_PRODUCCION)
+        ws = wb.active
+
+        filas = []
+        for form in formularios:
+            fecha = fecha_a_date(form.get("fecha"))
+            for prep in form.get("preparaciones") or []:
+                if not isinstance(prep, dict):
+                    continue
+                nombre = texto(prep.get("nombre"))
+                for ing in prep.get("ingredientes") or []:
+                    if not isinstance(ing, dict) or not texto(ing.get("ingrediente")):
+                        continue
+                    unidad_raw = texto(ing.get("unidad"))
+                    unidad = ALIAS_UNIDAD.get(unidad_raw.lower().rstrip("."), unidad_raw)
+                    filas.append([fecha, nombre, texto(ing.get("ingrediente")), num_o_texto(ing.get("cantidad")), unidad])
+
+        # Las filas de la muestra ya vienen formateadas hasta la 58; si hacen falta más, se copia ese formato
+        ultima_formateada = ws.max_row
+        for n, valores in enumerate(filas):
+            r = 2 + n
+            if r > ultima_formateada:
+                for col in range(1, 6):
+                    origen, destino = ws.cell(row=ultima_formateada, column=col), ws.cell(row=r, column=col)
+                    destino._style = copy(origen._style)
+            for col, v in enumerate(valores, 1):
+                ws.cell(row=r, column=col).value = v
 
         stream = BytesIO()
         wb.save(stream)
